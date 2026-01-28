@@ -1,0 +1,13 @@
+baseURL = 'https://example.org/'
+languageCode = 'en-us'
+title = 'My New Hugo Site'
+
+[params]
+  # 开启数学公式
+  math = true
+  
+[params.section.math]
+  enable = true
+  # 推荐使用 KaTeX，渲染速度远超 MathJax
+  copyTex = true
+  mhchem = true

@@ -1,0 +1,8 @@
+# 忽略 Hugo 生成的静态网页文件夹（这些由 Vercel 自动生成）
+public/
+resources/
+# 忽略临时文件夹
+.hugo_build.temp
+# 忽略操作系统缓存
+.DS_Store
+Thumbs.db
