@@ -1,14 +1,55 @@
-baseURL = 'https://kiraa-blog.vercel.app/'
+baseURL = 'https://你的域名.vercel.app/' # 部署后Vercel会自动分配，先填这个占位
 languageCode = 'zh-cn'
-title = 'My New Hugo Site'
-theme = 'FixIt'
+title = "Kiraa" # 改成你的博客名
+theme = "FixIt" # 核心：指定主题
+
+hasCJKLanguage = true
+summaryLength = 500
 
 [params]
-  # 开启数学公式
-  math = true
+  # 开启数学公式渲染 (KaTeX)，写论文笔记必备
+  [params.page.math]
+    enable = true
+    type = "katex"
   
-[params.section.math]
-  enable = true
-  # 推荐使用 KaTeX，渲染速度远超 MathJax
-  copyTex = true
-  mhchem = true
+  # 代码块设置
+  [params.page.code]
+    maxShownLines = 50 # 长代码折叠
+    copy = true        # 允许复制
+
+  [params.app]
+    # 优先使用 JetBrains Mono (程序员最爱) 或系统自带字体
+    fontFamily = "JetBrains Mono, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+
+  [params.page.toc]
+    enable = true       # ✅ 强制开启
+    keepStatic = false  # false = 悬浮在右侧 (Vue/现代文档风格)；true = 固定在文章正文开头
+    auto = true         # true = 自动折叠，只显示当前章节
+
+[markup]
+  _merge = "shallow"
+  [markup.highlight]
+    codeFences = true
+    guessSyntax = true
+    lineNos = true
+    style = "monokai"
+
+  [markup.goldmark]
+    [markup.goldmark.renderer]
+      unsafe = true  # 允许在 Markdown 里直接写 HTML (比如 iframe 视频)
+
+    [markup.goldmark.extensions]
+      # ⚠️ 注意：这里千万不要加 passthrough = false 这一行，直接留空或者放其他扩展
+
+      [markup.goldmark.extensions.passthrough]
+        enable = true
+        auto = true
+        [markup.goldmark.extensions.passthrough.delimiters]
+          block = [['\[', '\]'], ['$$', '$$']]
+          inline = [['\(', '\)'], ['$', '$']]
+
+[outputs]
+  _merge = "shallow"
+
+[taxonomies]
+  _merge = "shallow"
