@@ -1,4 +1,4 @@
-baseURL = 'https://kiraa-blog.vercel.app//' # 部署后Vercel会自动分配，先填这个占位
+baseURL = 'https://kiraa-blog.vercel.app/' # 部署后Vercel会自动分配，先填这个占位
 languageCode = 'zh-cn'
 title = "Kiraa" # 改成你的博客名
 theme = "FixIt" # 核心：指定主题
