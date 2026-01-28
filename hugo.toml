@@ -1,6 +1,7 @@
-baseURL = 'https://example.org/'
-languageCode = 'en-us'
+baseURL = 'https://kiraa-blog.vercel.app/'
+languageCode = 'zh-cn'
 title = 'My New Hugo Site'
+theme = 'FixIt'
 
 [params]
   # 开启数学公式
