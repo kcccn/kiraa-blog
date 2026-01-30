@@ -4,7 +4,7 @@ date:  2026-01-30
 draft: false
 tags:   [LLM, note]
 math:  true
-featuredImage: "img/cover.jpg
+featuredImage: "img/cover.jpg"
 ---
 
 ## 0 Qwen3 Technical Report
