@@ -32,6 +32,7 @@ summaryLength = 200
     codeFences = true
     guessSyntax = true
     lineNos = true
+    noClasses = false
     style = "monokai"
 
   [markup.goldmark]
