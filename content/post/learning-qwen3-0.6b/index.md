@@ -46,22 +46,22 @@ print(config)
 
 输出为：
 
-```json
+```python
 Qwen3Config {
   "architectures": [
-    "Qwen3ForCausalLM"          // 因果语言模型
+    "Qwen3ForCausalLM"          # 因果语言模型
   ],
-  "attention_bias": false,      // 无注意力偏置
+  "attention_bias": false,      # 无注意力偏置
   "attention_dropout": 0.0,
-  "bos_token_id": 151643,       // 特殊 token: 句子开始标记
+  "bos_token_id": 151643,       # 特殊 token: 句子开始标记
   "dtype": "bfloat16",          
-  "eos_token_id": 151645,       // 特殊 token: 句子结束标记
-  "head_dim": 128,              // 注意力头维度
-  "hidden_act": "silu",         // 激活函数
-  "hidden_size": 1024,          // 隐藏层大小
+  "eos_token_id": 151645,       # 特殊 token: 句子结束标记
+  "head_dim": 128,              # 注意力头维度
+  "hidden_act": "silu",         # 激活函数
+  "hidden_size": 1024,          # 隐藏层大小
   "initializer_range": 0.02,    
-  "intermediate_size": 3072,    // MLP 中间层大小, 3072 = 3 * 1024
-  "layer_types": [              // 每层的类型, 全部为 'full_attention', 一共 28 层
+  "intermediate_size": 3072,    # MLP 中间层大小, 3072 = 3 * 1024
+  "layer_types": [              # 每层的类型, 全部为 'full_attention', 一共 28 层
     "full_attention",
     "full_attention",
     "full_attention",
@@ -91,24 +91,24 @@ Qwen3Config {
     "full_attention",
     "full_attention"
   ],
-  "max_position_embeddings": 40960, // 最大上下文长度
+  "max_position_embeddings": 40960, # 最大上下文长度
   "max_window_layers": 28,          
   "model_type": "qwen3",
-  "num_attention_heads": 16,        // 注意力头数量
-  "num_hidden_layers": 28,          // 隐藏层数量
-  "num_key_value_heads": 8,         // K, V 注意力头数量
+  "num_attention_heads": 16,        # 注意力头数量
+  "num_hidden_layers": 28,          # 隐藏层数量
+  "num_key_value_heads": 8,         # K, V 注意力头数量
   "pad_token_id": null,
-  "rms_norm_eps": 1e-06,            // RMS 归一化的 epsilon 值
+  "rms_norm_eps": 1e-06,            # RMS 归一化的 epsilon 值
   "rope_parameters": {
     "rope_theta": 1000000,
     "rope_type": "default"
   },
   "sliding_window": null,
-  "tie_word_embeddings": true,      // 词嵌入共享
+  "tie_word_embeddings": true,      # 词嵌入共享
   "transformers_version": "5.0.0",
   "use_cache": true,
   "use_sliding_window": false,
-  "vocab_size": 151936              // 词表大小
+  "vocab_size": 151936              # 词表大小
 }
 ```
 
@@ -138,21 +138,21 @@ print(first_layer)
 
 输出为：
 
-```json
+```python
 Qwen3DecoderLayer(
-  (self_attn): Qwen3Attention( // Attention 模块
-    // q-head: 16 * 头维度 128 = 2048
+  (self_attn): Qwen3Attention( # Attention 模块
+    # q-head: 16 * 头维度 128 = 2048
     (q_proj): Linear(in_features=1024, out_features=2048, bias=False) 
-	// k-head: 8  * 头维度 128 = 1024
+	# k-head: 8  * 头维度 128 = 1024
     (k_proj): Linear(in_features=1024, out_features=1024, bias=False) 
-	// v-head: 8  * 头维度 128 = 1024
+	# v-head: 8  * 头维度 128 = 1024
     (v_proj): Linear(in_features=1024, out_features=1024, bias=False) 
-	// Q(K^T)V 算出来隐藏层维度为 2048，需要转换回 embedding 的 1024 维
+	# Q(K^T)V 算出来隐藏层维度为 2048，需要转换回 embedding 的 1024 维
     (o_proj): Linear(in_features=2048, out_features=1024, bias=False) 
     (q_norm): Qwen3RMSNorm((128,), eps=1e-06) // 新引入的 q_norm
     (k_norm): Qwen3RMSNorm((128,), eps=1e-06) // 新引入的 k_norm
   )
-  (mlp): Qwen3MLP( // MLP 模块, SwiGLU
+  (mlp): Qwen3MLP( # MLP 模块, SwiGLU
     (gate_proj): Linear(in_features=1024, out_features=3072, bias=False)
     (up_proj): Linear(in_features=1024, out_features=3072, bias=False)
     (down_proj): Linear(in_features=3072, out_features=1024, bias=False)

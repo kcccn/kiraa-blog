@@ -13,18 +13,18 @@ summaryLength = 200
     type = "katex"
   
   # 代码块设置
-  # [params.page.code]
-  #   maxShownLines = 50 # 长代码折叠
-  #   copy = true        # 允许复制
+  [params.page.code]
+    maxShownLines = 50 # 长代码折叠
+    copy = true        # 允许复制
 
-  # [params.app]
-  #   # 优先使用 JetBrains Mono (程序员最爱) 或系统自带字体
-  #   fontFamily = "JetBrains Mono, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+  [params.app]
+    # 优先使用 JetBrains Mono (程序员最爱) 或系统自带字体
+    fontFamily = "JetBrains Mono, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
 
-  # [params.page.toc]
-  #   enable = true       # ✅ 强制开启
-  #   keepStatic = false  # false = 悬浮在右侧 (Vue/现代文档风格)；true = 固定在文章正文开头
-  #   auto = true         # true = 自动折叠，只显示当前章节
+  [params.page.toc]
+    enable = true       # ✅ 强制开启
+    keepStatic = false  # false = 悬浮在右侧 (Vue/现代文档风格)；true = 固定在文章正文开头
+    auto = true         # true = 自动折叠，只显示当前章节
 
 [markup]
   _merge = "shallow"
