@@ -170,7 +170,7 @@ Qwen3DecoderLayer(
 模型结构整理如下：
 
 <figure style="text-align: center;">
-    <img src="img/Architecture.png" alt="Architecture" width="70%" />
+    <img src="img/Architecture.png" alt="Architecture" width="50%" />
     <figcaption style="color: grey; font-size: 0.9em; text-align: center;">
 		Qwen3-0.6B 模型结构
     </figcaption>
