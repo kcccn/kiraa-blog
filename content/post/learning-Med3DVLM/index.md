@@ -272,7 +272,6 @@ $$
 
 其中 $\alpha$ 是一个缩放系数。
 
-
 ## 训练
 
 冻结 Vision Encoder ，解冻投影层和 LLM 的 LoRA 参数，解冻 LLM 的 embedding 参数和输出层参数。
