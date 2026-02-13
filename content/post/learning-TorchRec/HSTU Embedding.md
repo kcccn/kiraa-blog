@@ -275,5 +275,5 @@ tensor([[-0.0537, -0.4971,  0.0275, -0.2043, -0.2550,  0.2375,  0.3035],
 
 ## HSTU Embedding
 
-![embedding-preprocess](embedding-preprocess.svg)
+![embedding-preprocess](./embedding-preprocess.svg)
 
