@@ -77,7 +77,7 @@ Theme Expert 执行任何操作时，**必须严格遵循** `AGENTS/workflows/ma
 | S-26 | Cloudflare 代理架构下 IP 获取必须优先读取 `cf-connecting-ip` | `x-forwarded-for` 第一个 IP 可能是 CF 节点而非真实用户 IP（踩坑记录 2026-04-20） |
 | S-27 | 私有 IP 判断 `172.` 前缀必须限定 `172.16.0.0/12`（172.16-172.31），不得过滤所有 `172.*` | 过滤所有 `172.*` 会误杀公网 IP（踩坑记录 2026-04-20） |
 | S-28 | 地理编码服务必须优先使用支持 HTTPS 的 API，HTTP-only 服务仅作降级备用 | `ip-api.com` 免费版仅 HTTP，HTTPS 环境下可能被安全策略阻止（踩坑记录 2026-04-20） |
-| S-29 | 坐标获取必须优先读取 Vercel Header（`x-vercel-ip-latitude`/`x-vercel-ip-longitude`），外部 API 仅作降级 | Vercel Header 零延迟零外部调用，优先级最高（踩坑记录 2026-04-20） |
+| S-29 | 坐标获取必须优先校验 `cf-iplatitude`/`cf-iplongitude`（CF Managed Transforms），`x-vercel-ip-*` 仅在无 `cf-connecting-ip` 时使用 | 双重代理下 Vercel Header 返回机房坐标而非用户位置（踩坑记录 2026-04-20） |
 | S-30 | 坐标精度必须为三位小数（`toFixed(3)`），Set 成员必须追加日期后缀（`YYYY-MM-DD`） | 两位小数精度不足，无日期后缀无法实现同坐标多天叠加发光（踩坑记录 2026-04-20） |
 
 ## 能力要求

@@ -41,7 +41,20 @@ function isPrivateIP(ip) {
   return false;
 }
 
-async function geoLocateFromVercelHeader(req) {
+function geoLocateFromCFHeader(req) {
+  const cfLat = req.headers['cf-iplatitude'];
+  const cfLon = req.headers['cf-iplongitude'];
+  if (cfLat && cfLon) {
+    const lat = parseFloat(cfLat);
+    const lon = parseFloat(cfLon);
+    if (!isNaN(lat) && !isNaN(lon)) {
+      return { lat, lon };
+    }
+  }
+  return null;
+}
+
+function geoLocateFromVercelHeader(req) {
   const vLat = req.headers['x-vercel-ip-latitude'];
   const vLon = req.headers['x-vercel-ip-longitude'];
   if (vLat && vLon) {
@@ -83,10 +96,19 @@ async function geoLocateFromIPAPI(ip) {
 }
 
 async function geoLocate(req, ip) {
-  const vercelResult = geoLocateFromVercelHeader(req);
-  if (vercelResult) {
-    console.log('[visit] Geolocated via Vercel Header:', ip, '→', vercelResult.lat, vercelResult.lon);
-    return vercelResult;
+  const cfResult = geoLocateFromCFHeader(req);
+  if (cfResult) {
+    console.log('[visit] Geolocated via CF Header:', ip, '→', cfResult.lat, cfResult.lon);
+    return cfResult;
+  }
+
+  const hasCFProxy = !!req.headers['cf-connecting-ip'];
+  if (!hasCFProxy) {
+    const vercelResult = geoLocateFromVercelHeader(req);
+    if (vercelResult) {
+      console.log('[visit] Geolocated via Vercel Header (no CF proxy):', ip, '→', vercelResult.lat, vercelResult.lon);
+      return vercelResult;
+    }
   }
 
   if (isPrivateIP(ip)) {
@@ -189,9 +211,10 @@ module.exports = async function handler(req, res) {
     const ip = getClientIP(req);
     console.log('[visit] Request IP:', ip, 'Headers:', {
       'cf-connecting-ip': req.headers['cf-connecting-ip'] || '(none)',
+      'cf-iplatitude': req.headers['cf-iplatitude'] || '(none)',
+      'cf-iplongitude': req.headers['cf-iplongitude'] || '(none)',
       'x-vercel-ip-latitude': req.headers['x-vercel-ip-latitude'] || '(none)',
       'x-vercel-ip-longitude': req.headers['x-vercel-ip-longitude'] || '(none)',
-      'x-real-ip': req.headers['x-real-ip'] || '(none)',
       'x-forwarded-for': req.headers['x-forwarded-for'] || '(none)',
     });
 

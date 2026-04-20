@@ -197,7 +197,7 @@ Vercel Serverless Function 放置在项目根目录 `api/` 下，文件名即路
 
 ### 4.2 `/api/visit` 接口
 
-- **坐标获取优先级**：`x-vercel-ip-latitude/longitude`（Vercel Header） > `ipapi.co`（HTTPS） > `ip-api.com`（HTTP）
+- **坐标获取优先级**：`cf-iplatitude/longitude`（CF Managed Transforms） > `x-vercel-ip-*`（仅无 CF 代理时） > `ipapi.co`（HTTPS） > `ip-api.com`（HTTP）
 - **IP 获取优先级**：`cf-connecting-ip` > `x-real-ip` > `x-forwarded-for` > `remoteAddress`
 - **私有 IP 过滤**：精确匹配 RFC 1918（`10.0.0.0/8`、`172.16.0.0/12`、`192.168.0.0/16`），`172.` 仅过滤 172.16-172.31
 - **数据存储**：Upstash Redis Set（key: `kiraa:visit:coords`），成员格式 `"lon,lat,YYYY-MM-DD"`（三位小数 + 日期后缀）

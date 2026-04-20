@@ -168,3 +168,11 @@
 - **踩坑点**：Vercel 原生提供 `x-vercel-ip-latitude` / `x-vercel-ip-longitude` Header，零延迟零外部调用，但之前未使用；Set 成员格式 `"lon,lat"` 导致同一坐标去重无法叠加；两位小数精度约 1.1km，三位小数约 110m 更精确；短时间大量访问会冲爆数据库，需天级精度防刷
 - **解决方案**：坐标获取优先级改为 Vercel Header > ipapi.co > ip-api.com；Set 成员格式改为 `"lon,lat,YYYY-MM-DD"`（三位小数 + 日期后缀），同一坐标不同天产生不同成员实现叠加发光；`migrateOldFormat()` 自动检测并清空旧格式数据；前端 `fetchVisitCoords()` 将 `[lon, lat, day]` 映射为 `[lon, lat, 0]`（海拔 0，S-23）
 - **对 Agent 的强制约束**：坐标获取必须优先读取 Vercel Header（`x-vercel-ip-latitude`/`x-vercel-ip-longitude`），外部 API 仅作降级；坐标精度必须为三位小数（`toFixed(3)`）；Set 成员必须追加日期后缀（`YYYY-MM-DD`）实现同坐标多天叠加
+
+### [2026-04-20] 接入 CF Managed Transforms，修复双重代理定位偏移
+
+- **事件类型**：功能重构
+- **触发原因**：Vercel Header 在 CF 代理下返回机房坐标而非用户位置，导致定位偏移
+- **踩坑点**：CF → Vercel 双重代理下 `x-vercel-ip-*` 返回 Vercel 入口机房坐标（如 Washington DC）；CF Managed Transforms 提供 `cf-iplatitude`/`cf-iplongitude` 标头，直接反映用户真实位置；Vercel Header 仅在无 CF 代理时可信，需通过 `cf-connecting-ip` 存在性判断
+- **解决方案**：坐标获取优先级改为 `cf-iplatitude/longitude` > `x-vercel-ip-*`（仅无 CF 代理时） > `ipapi.co` > `ip-api.com`；新增 `geoLocateFromCFHeader()` 读取 CF 标头；`geoLocate()` 中通过 `cf-connecting-ip` 存在性条件化使用 Vercel Header
+- **对 Agent 的强制约束**：坐标获取必须优先校验 `cf-iplatitude`/`cf-iplongitude`（CF Managed Transforms）；Vercel Header 仅在无 `cf-connecting-ip` 时使用，双重代理下会返回机房坐标
