@@ -185,14 +185,22 @@
 
   async function fetchVisitCoords() {
     try {
-      const res = await fetch(VISIT_API);
-      if (!res.ok) return null;
-      const data = await res.json();
-      if (!Array.isArray(data.coords) || data.coords.length === 0) return null;
+      var res = await fetch(VISIT_API);
+      if (!res.ok) {
+        console.warn('[footer-globe] API error:', res.status);
+        return null;
+      }
+      var data = await res.json();
+      if (!Array.isArray(data.coords) || data.coords.length === 0) {
+        console.warn('[footer-globe] No coords in response');
+        return null;
+      }
+      console.log('[footer-globe] Received', data.coords.length, 'coords from API');
       return data.coords.map(function (c) {
         return [c[0], c[1], 0];
       });
-    } catch {
+    } catch (err) {
+      console.warn('[footer-globe] Fetch error:', err.message);
       return null;
     }
   }

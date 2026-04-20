@@ -1,4 +1,4 @@
-﻿﻿﻿# AGENTS/personas/theme_expert.md
+﻿﻿﻿﻿# AGENTS/personas/theme_expert.md
 <!-- File: AGENTS/personas/theme_expert.md -->
 
 # 角色定义：主题维护专家（Theme Expert）
@@ -74,6 +74,9 @@ Theme Expert 执行任何操作时，**必须严格遵循** `AGENTS/workflows/ma
 | S-23 | scatter3D 数据第三维（海拔）必须为 `0`，非零值导致点脱离地球表面 | 值 `1` 表示地球半径的 1 倍，点飞出表面（踩坑记录 2026-04-20） |
 | S-24 | 赛博风格地球必须使用 `shading: 'color'` 而非 `'lambert'`，后者产生真实光影 | `'lambert'` 不适合暗黑赛博风格（踩坑记录 2026-04-20） |
 | S-25 | 图标等无需编译的静态资源替换，必须放置在项目根目录 `static/` 下进行静默覆盖，禁止修改 `themes/FixIt/static/` | Hugo `static/` 优先级高于主题，同名文件自动覆盖（踩坑记录 2026-04-20） |
+| S-26 | Cloudflare 代理架构下 IP 获取必须优先读取 `cf-connecting-ip` | `x-forwarded-for` 第一个 IP 可能是 CF 节点而非真实用户 IP（踩坑记录 2026-04-20） |
+| S-27 | 私有 IP 判断 `172.` 前缀必须限定 `172.16.0.0/12`（172.16-172.31），不得过滤所有 `172.*` | 过滤所有 `172.*` 会误杀公网 IP（踩坑记录 2026-04-20） |
+| S-28 | 地理编码服务必须优先使用支持 HTTPS 的 API，HTTP-only 服务仅作降级备用 | `ip-api.com` 免费版仅 HTTP，HTTPS 环境下可能被安全策略阻止（踩坑记录 2026-04-20） |
 
 ## 能力要求
 

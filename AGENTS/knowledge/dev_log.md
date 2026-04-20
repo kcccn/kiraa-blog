@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿# AGENTS/knowledge/dev_log.md
+﻿﻿﻿﻿﻿﻿﻿﻿# AGENTS/knowledge/dev_log.md
 <!-- File: AGENTS/knowledge/dev_log.md -->
 
 # 长期记忆与决策库
@@ -152,3 +152,11 @@
 - **踩坑点**：FixIt 主题 `link.html` 硬编码引用 `/favicon.ico`、`/favicon-32x32.png`、`/favicon-16x16.png`、`/apple-touch-icon.png`，只需在项目 `static/` 下放置同名文件即可覆盖，无需修改模板；`tileColor`（Windows 磁贴颜色）默认为 `#da532c`，需显式配置为 `#42b883`；转换脚本和源图不应纳入 git 追踪
 - **解决方案**：编写 Python Pillow 脚本 `scripts/gen_favicon.py` 从 `logo.jpg` 自动生成 4 个标准尺寸图标到 `static/`；在 `hugo.toml` 中设置 `iconColor`、`tileColor` 为 `#42b883`，`themeColor` 亮色/暗色均为 `#42b883`；在 `.gitignore` 中排除 `logo.jpg` 和 `scripts/`
 - **对 Agent 的强制约束**：针对图标等无需编译的静态资源替换，必须放置在项目根目录的 `static/` 下进行静默覆盖，禁止修改 `themes/FixIt/static/` 下的文件
+
+### [2026-04-20] 修复 Cloudflare + Vercel 架构下 IP 解析与地理编码失败
+
+- **事件类型**：Bug 修复
+- **触发原因**：域名切换后 Vercel Logs 为空（前端请求未到达后端），北京 IP 识别失败（合肥点亮但北京不亮）
+- **踩坑点**：Cloudflare 代理下 `x-forwarded-for` 第一个 IP 可能是 CF 节点而非真实用户 IP，必须优先读取 `cf-connecting-ip`；`172.` 前缀过滤过宽，`172.16.0.0/12` 才是私有 IP 范围（172.16-172.31），原代码过滤了所有 `172.*` 导致部分公网 IP 被误判为内网；`ip-api.com` 免费版仅支持 HTTP 不支持 HTTPS，在 HTTPS 环境下可能被安全策略阻止；Vercel Logs 无任何调试输出无法定位问题
+- **解决方案**：`getClientIP()` 优先级改为 `cf-connecting-ip` > `x-real-ip` > `x-forwarded-for` > `remoteAddress`；`isPrivateIP()` 精确过滤 `172.16.0.0/12`（仅 172.16-172.31）；地理编码主服务切换为 `ipapi.co`（支持 HTTPS），`ip-api.com` 降级为备用；handler 中添加 `console.log` 输出 IP 和 Header 信息；前端 `fetchVisitCoords()` 添加状态码和错误日志
+- **对 Agent 的强制约束**：Cloudflare 代理架构下 IP 获取必须优先读取 `cf-connecting-ip`；私有 IP 判断 `172.` 前缀必须限定 `172.16.0.0/12` 范围，不得过滤所有 `172.*`；地理编码服务必须优先使用支持 HTTPS 的 API（如 `ipapi.co`），HTTP-only 服务仅作降级备用；后端 API 必须包含调试日志以便 Vercel Logs 排查

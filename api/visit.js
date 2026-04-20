@@ -1,6 +1,9 @@
 const { Redis } = require('@upstash/redis');
 
-const GEO_API = 'http://ip-api.com/json';
+const GEO_APIS = [
+  { url: 'https://ipapi.co', format: 'ipapi' },
+  { url: 'http://ip-api.com/json', format: 'ip-api' },
+];
 const REDIS_KEY = 'kiraa:visit:coords';
 const MAX_COORDS = 5000;
 
@@ -14,6 +17,14 @@ function getRedis() {
 }
 
 function getClientIP(req) {
+  const cfIP = req.headers['cf-connecting-ip'];
+  if (cfIP) {
+    return cfIP.trim();
+  }
+  const realIP = req.headers['x-real-ip'];
+  if (realIP) {
+    return realIP.trim();
+  }
   const forwarded = req.headers['x-forwarded-for'];
   if (forwarded) {
     return forwarded.split(',')[0].trim();
@@ -21,12 +32,22 @@ function getClientIP(req) {
   return req.socket?.remoteAddress || '127.0.0.1';
 }
 
-async function geoLocate(ip) {
-  if (!ip || ip === '127.0.0.1' || ip === '::1' || ip.startsWith('10.') || ip.startsWith('192.168.') || ip.startsWith('172.')) {
-    return null;
+function isPrivateIP(ip) {
+  if (!ip) return true;
+  if (ip === '127.0.0.1' || ip === '::1' || ip === '0.0.0.0') return true;
+  if (ip.startsWith('10.')) return true;
+  if (ip.startsWith('192.168.')) return true;
+  if (ip.startsWith('172.')) {
+    const second = parseInt(ip.split('.')[1], 10);
+    if (second >= 16 && second <= 31) return true;
   }
+  if (ip.startsWith('fc00:') || ip.startsWith('fe80:')) return true;
+  return false;
+}
+
+async function geoLocateFromIPAPI(ip) {
   try {
-    const res = await fetch(`${GEO_API}/${ip}?fields=status,lat,lon`);
+    const res = await fetch(`http://ip-api.com/json/${ip}?fields=status,lat,lon`);
     if (!res.ok) return null;
     const data = await res.json();
     if (data.status !== 'success' || data.lat == null || data.lon == null) {
@@ -36,6 +57,39 @@ async function geoLocate(ip) {
   } catch {
     return null;
   }
+}
+
+async function geoLocateFromIPAPICo(ip) {
+  try {
+    const res = await fetch(`https://ipapi.co/${ip}/json/`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data.error || data.latitude == null || data.longitude == null) {
+      return null;
+    }
+    return { lat: data.latitude, lon: data.longitude };
+  } catch {
+    return null;
+  }
+}
+
+async function geoLocate(ip) {
+  if (isPrivateIP(ip)) {
+    console.log('[visit] Private IP skipped:', ip);
+    return null;
+  }
+  const result = await geoLocateFromIPAPICo(ip);
+  if (result) {
+    console.log('[visit] Geolocated via ipapi.co:', ip, '→', result.lat, result.lon);
+    return result;
+  }
+  const fallback = await geoLocateFromIPAPI(ip);
+  if (fallback) {
+    console.log('[visit] Geolocated via ip-api.com:', ip, '→', fallback.lat, fallback.lon);
+    return fallback;
+  }
+  console.log('[visit] Geolocation failed for IP:', ip);
+  return null;
 }
 
 async function storeCoord(redis, lon, lat) {
@@ -88,6 +142,7 @@ module.exports = async function handler(req, res) {
   const redis = getRedis();
 
   if (!redis) {
+    console.warn('[visit] Redis not configured');
     return res.status(503).json({
       error: 'Redis not configured',
       coords: [],
@@ -96,6 +151,12 @@ module.exports = async function handler(req, res) {
 
   try {
     const ip = getClientIP(req);
+    console.log('[visit] Request IP:', ip, 'Headers:', {
+      'cf-connecting-ip': req.headers['cf-connecting-ip'] || '(none)',
+      'x-real-ip': req.headers['x-real-ip'] || '(none)',
+      'x-forwarded-for': req.headers['x-forwarded-for'] || '(none)',
+    });
+
     const geo = await geoLocate(ip);
 
     if (geo) {
