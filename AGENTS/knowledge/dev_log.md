@@ -80,3 +80,11 @@
 - **踩坑点**：FixIt 主题提供了 `customPartials.footer` 扩展机制，无需覆盖整个 footer.html 模板；hugo.toml 文件存在 UTF-8 BOM 导致构建失败，需移除
 - **解决方案**：通过 `customPartials.footer` 注册自定义 partial，在 `_custom.scss` 中添加居中样式，地球颜色使用 `#42b883`（ADR-003 合规）
 - **对 Agent 的强制约束**：添加页脚/页头等组件时优先使用 `customPartials` 机制而非覆盖整个模板；修改 hugo.toml 前必须检查文件是否包含 UTF-8 BOM（`ef bb bf`），如有则必须移除
+
+### [2026-04-20] 修复 RevolverMaps 地球组件未显示：从 customPartials 切换到模板覆盖
+
+- **事件类型**：Bug 修复
+- **触发原因**：RevolverMaps 3D 地球组件在前端未渲染
+- **踩坑点**：`customPartials.footer` 机制经构建验证实际已成功注入 HTML 到页脚，但用户反馈前端未显示地球。根因可能是 RevolverMaps 服务 ID 无效（`5m8e0a7z6m9` 为占位值）或外部 JS 加载失败，而非 Hugo 模板层面的问题。按用户要求切换到同名模板覆盖方案（路径 D），将主题 `footer.html` 完整复制到项目 `layouts/_partials/footer.html` 并内嵌脚本
+- **解决方案**：废弃 `customPartials.footer` 配置和独立 partial 文件，改用同名模板覆盖 `layouts/_partials/footer.html`，在 `footer-container` 闭合前注入 RevolverMaps 脚本
+- **对 Agent 的强制约束**：使用第三方外部 JS 服务时，必须先验证服务 ID 的有效性，不得使用占位值；模板覆盖方案（路径 D）需完整复制主题源码再修改，主题升级时必须手动同步更新覆盖文件

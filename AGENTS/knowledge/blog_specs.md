@@ -94,15 +94,37 @@ FixIt 主题内置 `customPartials` 配置，允许在不覆盖模板文件的�
 layouts/_partials/custom/revolvermaps.html  →  配置值: "custom/revolvermaps.html"
 ```
 
-### 2.4 优先级
+### 2.4 优先级与局限性
 
-`customPartials` 机制**优先于**模板覆盖。当只需向特定区域注入内容时，应使用 `customPartials` 而非覆盖整个模板文件，以减少对主题升级的影响。
+`customPartials` 机制**优先于**模板覆盖。当只需向特定区域注入内容时，应优先使用 `customPartials` 而非覆盖整个模板文件，以减少对主题升级的影响。
+
+**局限性**：`customPartials` 依赖主题模板中对应的 `{{ block }}` 钩子才能生效。如果主题的某个模板未包含对应钩子，则 `customPartials` 注入的内容不会被渲染。当 `customPartials` 不满足需求时，需降级为同名模板覆盖方案（路径 D）。
 
 ---
 
-## 3. Page Bundle 文章组织规范
+## 3. 同名模板覆盖实操规范
 
-### 3.1 目录结构
+### 3.1 操作步骤
+
+1. 从 `themes/FixIt/layouts/` 中复制目标模板到项目 `layouts/` 下，保持相同相对路径
+2. 在复制后的文件中进行修改
+3. Hugo 构建时自动优先加载项目模板，主题模板被忽略
+
+### 3.2 当前覆盖文件
+
+| 项目文件 | 主题源文件 | 修改内容 |
+|----------|-----------|----------|
+| `layouts/_partials/footer.html` | `themes/FixIt/layouts/_partials/footer.html` | 在 `footer-container` 闭合前注入 RevolverMaps 地球组件 |
+
+### 3.3 维护风险
+
+模板覆盖为**全文件替代**，主题升级时必须手动同步更新覆盖文件，否则会丢失主题的新功能或修复。每次 FixIt 主题升级后，必须对比覆盖文件与新版主题文件的差异并手动合并。
+
+---
+
+## 4. Page Bundle 文章组织规范
+
+### 4.1 目录结构
 
 所有文章位于 `content/post/` 目录下，采用 **Page Bundle** 形式组织：
 
@@ -116,7 +138,7 @@ content/post/<article-name>/
 
 **核心规则**：`index.md` 与 `img/` 目录必须同级，构成一个完整的 Page Bundle。图片资源放在 `img/` 子目录中，通过相对路径引用。
 
-### 3.2 Front Matter 必需字段
+### 4.2 Front Matter 必需字段
 
 ```yaml
 ---
@@ -129,7 +151,7 @@ featuredImage: "img/cover.jpg" # 可选，封面图相对路径
 ---
 ```
 
-### 3.3 图片引用规则
+### 4.3 图片引用规则
 
 | 引用方式 | 语法 | 说明 |
 |----------|------|------|
@@ -137,7 +159,7 @@ featuredImage: "img/cover.jpg" # 可选，封面图相对路径
 | 封面图 | `featuredImage: "img/cover.jpg"` | 相对于 Page Bundle 根目录 |
 | 外部图片 | `<figure>` HTML 标签 | 需 `markup.goldmark.renderer.unsafe = true` |
 
-### 3.4 命名规范
+### 4.4 命名规范
 
 - 文章目录名：`learning-<topic>` 或 `<descriptive-name>`，小写字母 + 连字符
 - 图片文件名：小写字母、数字、连字符，禁止空格和特殊字符
