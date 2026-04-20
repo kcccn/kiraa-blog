@@ -184,3 +184,11 @@
 - **踩坑点**：5G 运营商出口 IP 的 CF 定位偏移可达数百公里；`ip-api.com` 的 `as` 字段包含运营商信息（如 China Mobile），可用于纠偏；顺序降级最坏情况需等待 3 个 API 超时（4.5s）；Vercel 内部网关 IP（35.241.x 等）不应作为访客 IP
 - **解决方案**：`getClientIP()` 改为候选列表遍历 + 私有 IP/网关 IP 过滤；`geoLocate()` 改为 `Promise.allSettled` 并行请求 CF Header + ip-api.com + ipapi.co（1.5s 超时）；`arbitrate()` 仲裁算法：CF vs ip-api.com 距离 >100km 且 ip-api 返回运营商信息时强制采用 ip-api 结果；`haversineKm()` 球面距离计算；`isCarrierIP()` 运营商关键词匹配；`migrateOldFormat()` 强制清空旧数据；`getAllCoords()` 增加非法坐标过滤（经度 >180、纬度 >90）
 - **对 Agent 的强制约束**：地理定位必须使用多源并行仲裁（`Promise.allSettled`），禁止顺序降级；`ip-api.com` 必须获取 `as` 字段用于运营商纠偏；IP 获取必须过滤 Vercel 内部网关 IP；部署后需将 `migrateOldFormat()` 恢复为仅格式检测（当前为强制清空）
+
+### [2026-04-20] VPN/机房节点识别与数据染色系统
+
+- **事件类型**：功能升级
+- **触发原因**：VPN/代理/云机房访问产生的坐标不代表真实访客位置，需自动识别并差异化展示
+- **踩坑点**：`ip-api.com` 提供 `proxy` 和 `hosting` 字段可直接判断代理/机房 IP；云厂商 AS 字段（如 AWS、Azure）可作为补充判断依据；CF Header 和 ipapi.co 无法提供 proxy 信息，需从并行的 ip-api 结果中继承 `isProxy` 标记
+- **解决方案**：`geoLocateFromIPAPIFull()` 扩展 `fields` 增加 `proxy,hosting`；新增 `CLOUD_KEYWORDS` 常量和 `isCloudProvider()` 函数；新增 `computeIsProxy()` 联合判定（`proxy || hosting || isCloudProvider(as)`）；`arbitrate()` 所有返回路径携带 `isProxy` 字段，CF 胜出时仍从 ip-api 继承 `isProxy`；`storeCoord()` 格式升级为 `lon,lat,YYYY-MM-DD,isProxy`；`getAllCoords()` 兼容三段/四段解析；前端 `buildOption()` 拆分双 series（真实用户 `#42b883` + 代理节点 `#ff6b6b` 幽灵红半透明）；迁移 key 升级为 `v4`
+- **对 Agent 的强制约束**：`isProxy` 标记必须从 ip-api.com 的 `proxy/hosting` 字段及 AS 云厂商关键词联合判定；存储格式必须为四段式 `lon,lat,YYYY-MM-DD,isProxy`；前端必须拆分双 series 差异化显示

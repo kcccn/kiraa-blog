@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿# AGENTS/knowledge/blog_specs.md
+﻿﻿﻿﻿﻿﻿﻿﻿# AGENTS/knowledge/blog_specs.md
 <!-- File: AGENTS/knowledge/blog_specs.md -->
 
 # Kiraa-Blog 项目规约
@@ -202,13 +202,15 @@ Vercel Serverless Function 放置在项目根目录 `api/` 下，文件名即路
 - **仲裁算法**：CF vs ip-api.com 距离 >100km 且 ip-api 返回运营商信息时，强制采用 ip-api 结果（5G 纠偏）
 - **IP 获取**：候选列表遍历（`cf-connecting-ip` > `x-real-ip` > `x-forwarded-for` > `remoteAddress`），过滤私有 IP 和 Vercel 网关 IP
 - **私有 IP 过滤**：精确匹配 RFC 1918（`10.0.0.0/8`、`172.16.0.0/12`、`192.168.0.0/16`），`172.` 仅过滤 172.16-172.31
-- **数据存储**：Upstash Redis Set（key: `kiraa:visit:coords`），成员格式 `"lon,lat,YYYY-MM-DD"`（三位小数 + 日期后缀）
+- **数据存储**：Upstash Redis Set（key: `kiraa:visit:coords`），成员格式 `"lon,lat,YYYY-MM-DD,isProxy"`（三位小数 + 日期后缀 + 代理标记）
 - **坐标精度**：三位小数（`toFixed(3)`，约 110m）
+- **VPN/代理识别**：`computeIsProxy()` 联合判定 `ip-api.com` 的 `proxy/hosting` 字段及 AS 云厂商关键词（AWS/Azure/GCP 等）
+- **前端染色**：真实用户 `#42b883`（Vue 绿，size 3，opacity 0.8）；代理节点 `#ff6b6b`（幽灵红，size 2，opacity 0.35）
 - **叠加机制**：同一坐标不同天产生不同 Set 成员，前端 `blendMode: 'lighter'` 实现叠加发光
 - **自动裁剪**：超过 5000 条记录时裁剪最早数据
 - **脏数据过滤**：`getAllCoords()` 过滤 `undefined`、非法坐标（经度 >180、纬度 >90）
 - **旧数据迁移**：`migrateOldFormat()` 部署时强制清空旧数据（需在确认后恢复为仅格式检测）
-- **响应格式**：`{ count: number, coords: [[lon, lat, day], ...] }`
+- **响应格式**：`{ count: number, coords: [[lon, lat, day, isProxy], ...] }`
 - **降级策略**：Redis 未配置返回 503；坐标获取失败跳过存储但仍返回已有数据；Vercel Header 仅在无 CF 代理时使用
 - **调试日志**：Vercel Logs 输出 IP、Header 来源、仲裁结果
 

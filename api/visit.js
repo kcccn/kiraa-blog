@@ -9,6 +9,11 @@ const CARRIER_KEYWORDS = [
   'mobile', 'unicom', 'telecom', '5g',
   'cmcc', 'cucc', 'ctcc',
 ];
+const CLOUD_KEYWORDS = [
+  'amazon', 'aws', 'azure', 'microsoft', 'google cloud', 'gcp',
+  'digitalocean', 'hetzner', 'linode', 'akamai', 'ovh',
+  'vultr', 'oracle cloud', 'alibaba cloud', 'aliyun', 'tencent cloud',
+];
 const VERCEL_GATEWAY_PREFIXES = ['35.241.', '34.120.', '34.151.'];
 
 function getRedis() {
@@ -76,6 +81,12 @@ function isCarrierIP(asField) {
   return CARRIER_KEYWORDS.some(kw => lower.includes(kw));
 }
 
+function isCloudProvider(asField) {
+  if (!asField) return false;
+  const lower = asField.toLowerCase();
+  return CLOUD_KEYWORDS.some(kw => lower.includes(kw));
+}
+
 function geoLocateFromCFHeader(req) {
   const cfLat = req.headers['cf-iplatitude'];
   const cfLon = req.headers['cf-iplongitude'];
@@ -83,7 +94,7 @@ function geoLocateFromCFHeader(req) {
     const lat = parseFloat(cfLat);
     const lon = parseFloat(cfLon);
     if (!isNaN(lat) && !isNaN(lon)) {
-      return { lat, lon, as: null, city: null };
+      return { lat, lon, as: null, city: null, proxy: false, hosting: false };
     }
   }
   return null;
@@ -104,11 +115,15 @@ function geoLocateFromVercelHeader(req) {
 
 async function geoLocateFromIPAPIFull(ip) {
   try {
-    const res = await fetch(`http://ip-api.com/json/${ip}?fields=status,lat,lon,city,as`);
+    const res = await fetch(`http://ip-api.com/json/${ip}?fields=status,lat,lon,city,as,proxy,hosting`);
     if (!res.ok) return null;
     const data = await res.json();
     if (data.status !== 'success' || data.lat == null || data.lon == null) return null;
-    return { lat: data.lat, lon: data.lon, as: data.as || '', city: data.city || '' };
+    return {
+      lat: data.lat, lon: data.lon,
+      as: data.as || '', city: data.city || '',
+      proxy: !!data.proxy, hosting: !!data.hosting,
+    };
   } catch {
     return null;
   }
@@ -120,10 +135,17 @@ async function geoLocateFromIPAPICo(ip) {
     if (!res.ok) return null;
     const data = await res.json();
     if (data.error || data.latitude == null || data.longitude == null) return null;
-    return { lat: data.latitude, lon: data.longitude, as: data.org || '', city: data.city || '' };
+    return { lat: data.latitude, lon: data.longitude, as: data.org || '', city: data.city || '', proxy: false, hosting: false };
   } catch {
     return null;
   }
+}
+
+function computeIsProxy(source) {
+  if (!source) return false;
+  if (source.proxy || source.hosting) return true;
+  if (isCloudProvider(source.as)) return true;
+  return false;
 }
 
 function arbitrate(sources, req) {
@@ -133,7 +155,7 @@ function arbitrate(sources, req) {
       const vercelResult = geoLocateFromVercelHeader(req);
       if (vercelResult) {
         console.log('[visit] Arbitrated: Vercel Header (no other source)');
-        return vercelResult;
+        return { ...vercelResult, isProxy: false };
       }
     }
     console.log('[visit] Arbitrated: no result');
@@ -141,8 +163,9 @@ function arbitrate(sources, req) {
   }
 
   if (sources.length === 1) {
-    console.log('[visit] Arbitrated: single source', sources[0].source);
-    return { lat: sources[0].lat, lon: sources[0].lon };
+    const s = sources[0];
+    console.log('[visit] Arbitrated: single source', s.source);
+    return { lat: s.lat, lon: s.lon, isProxy: computeIsProxy(s) };
   }
 
   const cfSource = sources.find(s => s.source === 'CF');
@@ -150,17 +173,18 @@ function arbitrate(sources, req) {
 
   if (cfSource && apiSource) {
     const dist = haversineKm(cfSource.lat, cfSource.lon, apiSource.lat, apiSource.lon);
+    const isProxy = computeIsProxy(apiSource);
     if (dist > ARBITRATION_DISTANCE_KM && isCarrierIP(apiSource.as)) {
-      console.log('[visit] Arbitrated: ip-api wins (CF drift', dist.toFixed(0), 'km, carrier:', apiSource.as, ')');
-      return { lat: apiSource.lat, lon: apiSource.lon };
+      console.log('[visit] Arbitrated: ip-api wins (CF drift', dist.toFixed(0), 'km, carrier:', apiSource.as, ', isProxy:', isProxy, ')');
+      return { lat: apiSource.lat, lon: apiSource.lon, isProxy };
     }
-    console.log('[visit] Arbitrated: CF wins (dist', dist.toFixed(0), 'km, no carrier override)');
-    return { lat: cfSource.lat, lon: cfSource.lon };
+    console.log('[visit] Arbitrated: CF wins (dist', dist.toFixed(0), 'km, isProxy:', isProxy, ')');
+    return { lat: cfSource.lat, lon: cfSource.lon, isProxy };
   }
 
   const best = sources[0];
   console.log('[visit] Arbitrated: fallback to', best.source);
-  return { lat: best.lat, lon: best.lon };
+  return { lat: best.lat, lon: best.lon, isProxy: computeIsProxy(best) };
 }
 
 async function geoLocate(req, ip) {
@@ -188,7 +212,7 @@ async function geoLocate(req, ip) {
   return arbitrate(sources, req);
 }
 
-const MIGRATION_KEY = 'kiraa:visit:migrated_v3';
+const MIGRATION_KEY = 'kiraa:visit:migrated_v4';
 
 async function migrateOldFormat(redis) {
   try {
@@ -196,20 +220,20 @@ async function migrateOldFormat(redis) {
     if (migrated) return;
     const exists = await redis.exists(REDIS_KEY);
     if (exists) {
-      console.log('[visit] One-time force clearing old data...');
+      console.log('[visit] One-time force clearing old data for v4 migration...');
       await redis.del(REDIS_KEY);
     }
     await redis.set(MIGRATION_KEY, '1');
-    console.log('[visit] Migration flag set, will not clear again.');
+    console.log('[visit] Migration v4 flag set, will not clear again.');
   } catch (err) {
     console.error('[visit] Migration error:', err.message);
   }
 }
 
-async function storeCoord(redis, lon, lat) {
+async function storeCoord(redis, lon, lat, isProxy) {
   try {
     const day = new Date().toISOString().slice(0, 10);
-    const coord = `${lon.toFixed(3)},${lat.toFixed(3)},${day}`;
+    const coord = `${lon.toFixed(3)},${lat.toFixed(3)},${day},${isProxy ? 1 : 0}`;
     const pipeline = redis.pipeline();
     pipeline.sadd(REDIS_KEY, coord);
     pipeline.scard(REDIS_KEY);
@@ -237,9 +261,10 @@ async function getAllCoords(redis) {
         const lon = parseFloat(parts[0]);
         const lat = parseFloat(parts[1]);
         const day = parts[2] || '';
+        const isProxy = parts.length >= 4 ? (parseInt(parts[3], 10) === 1 ? 1 : 0) : 0;
         if (isNaN(lon) || isNaN(lat)) return null;
         if (Math.abs(lon) > 180 || Math.abs(lat) > 90) return null;
-        return [lon, lat, day];
+        return [lon, lat, day, isProxy];
       })
       .filter(Boolean);
   } catch (err) {
@@ -283,7 +308,7 @@ module.exports = async function handler(req, res) {
     const geo = await geoLocate(req, ip);
 
     if (geo) {
-      await storeCoord(redis, geo.lon, geo.lat);
+      await storeCoord(redis, geo.lon, geo.lat, geo.isProxy || false);
     }
 
     const coords = await getAllCoords(redis);

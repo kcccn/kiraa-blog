@@ -197,7 +197,7 @@
       }
       console.log('[footer-globe] Received', data.coords.length, 'coords from API');
       return data.coords.map(function (c) {
-        return [c[0], c[1], 0];
+        return [c[0], c[1], 0, c[3] || 0];
       });
     } catch (err) {
       console.warn('[footer-globe] Fetch error:', err.message);
@@ -208,7 +208,9 @@
   const CYBER_TEXTURE = 'https://cdn.jsdelivr.net/gh/apache/echarts-website@asf-site/examples/data-gl/asset/bathymetry_bw_composite_4k.jpg';
 
   function buildOption(fallbackTexture, isDark, coords) {
-    var scatterData = coords || FALLBACK_COORDS;
+    var allData = coords || FALLBACK_COORDS;
+    var realUsers = allData.filter(function (item) { return item[3] !== 1; });
+    var proxyNodes = allData.filter(function (item) { return item[3] === 1; });
 
     return {
       backgroundColor: 'transparent',
@@ -249,10 +251,24 @@
           coordinateSystem: 'globe',
           blendMode: 'lighter',
           symbolSize: 3,
-          data: scatterData,
+          data: realUsers,
           itemStyle: {
             color: '#42b883',
             opacity: 0.8,
+          },
+          label: {
+            show: false,
+          },
+        },
+        {
+          type: 'scatter3D',
+          coordinateSystem: 'globe',
+          blendMode: 'lighter',
+          symbolSize: 2,
+          data: proxyNodes,
+          itemStyle: {
+            color: '#ff6b6b',
+            opacity: 0.35,
           },
           label: {
             show: false,
