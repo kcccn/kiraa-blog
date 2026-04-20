@@ -128,3 +128,11 @@
 - **踩坑点**：Vercel Serverless Function 需放在 `api/` 目录下，文件名即路由路径；`@upstash/redis` 为 HTTP-based Redis 客户端，适合 Serverless 无连接池场景；`ip-api.com` 免费额度为 45 请求/分钟，对博客场景足够
 - **解决方案**：创建 `api/visit.js`，通过 `x-forwarded-for` 获取访客 IP，调用 `ip-api.com` 解析经纬度，存入 Upstash Redis Set，返回全量坐标数组；初始化 `package.json` 并安装 `@upstash/redis`；创建 `.gitignore` 排除 `node_modules/`
 - **对 Agent 的强制约束**：Vercel API 路由必须放在 `api/` 目录下；环境变量（`UPSTASH_REDIS_REST_URL`、`UPSTASH_REDIS_REST_TOKEN`）不得硬编码到代码中，必须通过 Vercel 后台配置
+
+### [2026-04-20] 重构 3D 地球：添加 scatter3D 发光热力散点 + 对接 /api/visit
+
+- **事件类型**：功能重构
+- **触发原因**：为地球添加真实访客分布可视化，实现坐标点越密集越亮的赛博朋克发光效果
+- **踩坑点**：`map3D` 不支持叠加 `scatter3D`，必须使用 `globe` 组件；`blendMode: 'lighter'` 是实现加色混合发光的关键配置，重叠点亮度指数级增加；前端 API 调用失败时必须降级到本地模拟数据以保证美观
+- **解决方案**：在 `assets/js/custom.js` 中重构 `buildOption()`，添加 `scatter3D` 系列（`blendMode: 'lighter'`、`symbolSize: 3`、颜色 `#42b883`）；新增 `fetchVisitCoords()` 对接 `/api/visit`；新增 `FALLBACK_COORDS`（15 个全球区域 ~258 个模拟坐标）作为降级数据；设置 `environment: 'transparent'` 和 `zoomSensitivity: 0`
+- **对 Agent 的强制约束**：`scatter3D` 必须配合 `globe` 组件使用，不可用于 `map3D`；外部 API 调用必须提供降级数据，不得因后端不可用导致地球空白；`blendMode: 'lighter'` 为发光效果核心配置，不得移除

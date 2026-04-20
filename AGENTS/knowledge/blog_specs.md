@@ -132,6 +132,20 @@ assets/ 本地资源提供 JS / 图片
 4. 在 `assets/js/custom.js` 中复用 FixIt 注入的 `echarts` 核心与 theme-switch / resize 生命周期，并在允许运行的页面动态插入地球 DOM
 5. 将 `echarts-gl` 与底图纹理放入项目 `assets/`，禁止依赖远程纹理 URL
 
+### 2.7 3D 地球视觉与数据规范
+
+| 配置项 | 值 | 说明 |
+|--------|-----|------|
+| 渲染组件 | `globe` | `map3D` 不支持叠加 `scatter3D` |
+| 背景透明 | `backgroundColor: 'transparent'` + `environment: 'transparent'` | 兼容亮色/暗色模式 |
+| 大气层颜色 | `#42b883`（Vue Green） | ADR-003 合规 |
+| 散点系列 | `scatter3D` + `blendMode: 'lighter'` | 加色混合，越密集越亮 |
+| 散点颜色 | `#42b883` | ADR-003 合规 |
+| 散点大小 | `symbolSize: 3` | 精致感 |
+| 自动旋转 | `autoRotate: true` | 持续动态 |
+| 禁用缩放 | `zoomSensitivity: 0` | 防裁切 |
+| 数据源 | `/api/visit`（真实） → `FALLBACK_COORDS`（降级） | API 失败时自动降级 |
+
 ---
 
 ## 3. 同名模板覆盖实操规范

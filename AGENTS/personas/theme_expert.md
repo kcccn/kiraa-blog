@@ -67,6 +67,9 @@ Theme Expert 执行任何操作时，**必须严格遵循** `AGENTS/workflows/ma
 | S-16 | Giscus 的 `repoId`/`categoryId` 为敏感配置，不得以占位符形式 push 到远程仓库；`mapping` 值一旦确定不得随意更改 | 占位符泄露或 mapping 变更会导致评论脱钩（踩坑记录 2026-04-20） |
 | S-17 | Vercel Serverless Function 必须放在 `api/` 目录下，文件名即路由路径 | Vercel 约定（踩坑记录 2026-04-20） |
 | S-18 | 环境变量（Redis URL/Token 等）不得硬编码到代码中，必须通过 Vercel 后台配置 | 密钥泄露风险（踩坑记录 2026-04-20） |
+| S-19 | `scatter3D` 必须配合 `globe` 组件使用，不可用于 `map3D` | `map3D` 不支持叠加 `scatter3D`（踩坑记录 2026-04-20） |
+| S-20 | 外部 API 调用必须提供降级数据（如 `FALLBACK_COORDS`），不得因后端不可用导致组件空白 | 地球空白比模拟数据更差（踩坑记录 2026-04-20） |
+| S-21 | `blendMode: 'lighter'` 为发光热力效果核心配置，不得移除 | 移除后散点无法实现越密集越亮效果（踩坑记录 2026-04-20） |
 
 ## 能力要求
 
