@@ -207,7 +207,7 @@
     }
   }
 
-  const CYBER_TEXTURE = 'https://cdn.jsdelivr.net/gh/apache/echarts-website@asf-site/examples/data-gl/asset/bathymetry_bw_composite_4k.jpg';
+  const CYBER_TEXTURE = 'https://cdn.jsdelivr.net/gh/apache/echarts-website@asf-site/examples/data-gl/asset/world.topo.bathy.200401.jpg';
 
   function buildOption(fallbackTexture, isDark, coords) {
     var allData = coords || FALLBACK_COORDS;
@@ -247,7 +247,7 @@
         viewControl: {
           autoRotate: true,
           autoRotateSpeed: 4,
-          distance: 200,
+          distance: 150,
           zoomSensitivity: 0,
         },
         itemStyle: {
@@ -261,7 +261,7 @@
           type: 'scatter3D',
           coordinateSystem: 'globe',
           blendMode: 'lighter',
-          symbolSize: 4,
+          symbolSize: 5,
           data: realUsers,
           itemStyle: {
             color: '#00ff88',
@@ -275,7 +275,7 @@
           type: 'scatter3D',
           coordinateSystem: 'globe',
           blendMode: 'lighter',
-          symbolSize: 3,
+          symbolSize: 4,
           data: proxyNodes,
           itemStyle: {
             color: '#ff3366',
@@ -330,6 +330,17 @@
 
       disposeChart();
       showGlobe(wrapper);
+      var chartWidth = host.offsetWidth || host.clientWidth;
+      var chartHeight = host.offsetHeight || host.clientHeight;
+      if (chartWidth < 10 || chartHeight < 10) {
+        await new Promise(function (r) { setTimeout(r, 300); });
+        chartWidth = host.offsetWidth || host.clientWidth;
+        chartHeight = host.offsetHeight || host.clientHeight;
+      }
+      if (chartWidth < 10 || chartHeight < 10) {
+        hideGlobe(wrapper, 'Globe container too small: ' + chartWidth + 'x' + chartHeight);
+        return;
+      }
       state.chart = window.echarts.init(
         host,
         window.fixit.isDark ? 'dark' : 'light',
