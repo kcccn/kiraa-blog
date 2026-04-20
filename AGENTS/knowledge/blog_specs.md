@@ -1,4 +1,4 @@
-﻿﻿﻿﻿# AGENTS/knowledge/blog_specs.md
+﻿﻿﻿﻿﻿# AGENTS/knowledge/blog_specs.md
 <!-- File: AGENTS/knowledge/blog_specs.md -->
 
 # Kiraa-Blog 项目规约
@@ -148,6 +148,22 @@ assets/ 本地资源提供 JS / 图片
 | 自动旋转 | `autoRotate: true` | 持续动态 |
 | 禁用缩放 | `zoomSensitivity: 0` | 防裁切 |
 | 数据源 | `/api/visit`（真实） → `FALLBACK_COORDS`（降级） | API 失败时自动降级 |
+
+### 2.8 Favicon 规范
+
+| 配置项 | 值 | 说明 |
+|--------|-----|------|
+| 源图 | `logo.jpg`（项目根目录，不纳入 git） | 一次性转换源 |
+| 生成脚本 | `scripts/gen_favicon.py`（不纳入 git） | Python Pillow 自动生成 |
+| `favicon.ico` | `static/favicon.ico`（16×16 + 32×32） | 桌面浏览器标签图标 |
+| `favicon-32x32.png` | `static/favicon-32x32.png` | 标准 PNG 图标 |
+| `favicon-16x16.png` | `static/favicon-16x16.png` | 小尺寸 PNG 图标 |
+| `apple-touch-icon.png` | `static/apple-touch-icon.png`（180×180） | iOS 桌面快捷方式 |
+| `iconColor` | `#42b883` | Safari mask-icon 颜色（ADR-003） |
+| `tileColor` | `#42b883` | Windows 磁贴颜色（ADR-003） |
+| `themeColor` | `#42b883`（亮色/暗色） | 移动端状态栏颜色（ADR-003） |
+
+**覆盖机制**：项目 `static/` 下同名文件自动覆盖 `themes/FixIt/static/`，无需修改模板（S-25）。
 
 ---
 

@@ -1,4 +1,4 @@
-﻿﻿# AGENTS/templates/patch_format.md
+﻿﻿﻿# AGENTS/templates/patch_format.md
 <!-- File: AGENTS/templates/patch_format.md -->
 
 # Agent 输出标准化补丁模板

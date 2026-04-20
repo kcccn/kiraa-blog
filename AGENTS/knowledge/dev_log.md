@@ -1,4 +1,4 @@
-﻿﻿﻿﻿# AGENTS/knowledge/dev_log.md
+﻿﻿﻿﻿﻿﻿# AGENTS/knowledge/dev_log.md
 <!-- File: AGENTS/knowledge/dev_log.md -->
 
 # 长期记忆与决策库
@@ -144,3 +144,11 @@
 - **踩坑点**：`environment: 'transparent'` 在 ECharts-GL 中不等于无背景，WebGL canvas 仍保留黑色底色，必须设为 `''`（空字符串）彻底禁用星空；`shading: 'lambert'` 产生真实光影不适合赛博风格，必须切换为 `shading: 'color'`；scatter3D 数据格式 `[lon, lat, value]` 中第三个参数被解释为海拔高度，`1` 表示地球半径的 1 倍导致点飞出表面，必须为 `0`；`api/visit.js` 已包含完整后端逻辑无需重写
 - **解决方案**：`environment: 'transparent'` → `environment: ''`；`baseTexture` 从本地 `world.jpg` 切换为 ECharts 官方深色灰度地图 CDN（bathymetry_bw_composite_4k.jpg）；`shading: 'lambert'` → `shading: 'color'`；所有散点数据第三维从 `1` 改为 `0`；降低光照强度（main: 0.6, ambient: 0.15）让地球更暗突出大气层发光
 - **对 Agent 的强制约束**：ECharts-GL `globe.environment` 必须设为 `''`（空字符串）而非 `'transparent'` 以消除黑框；scatter3D 数据第三维（海拔）必须为 `0`，非零值会导致点脱离地球表面；赛博风格地球必须使用 `shading: 'color'` 而非 `'lambert'`
+
+### [2026-04-20] 从单张 JPG 全自动生成并替换网站 Favicon
+
+- **事件类型**：功能添加
+- **触发原因**：替换 FixIt 主题默认图标为自定义品牌图标
+- **踩坑点**：FixIt 主题 `link.html` 硬编码引用 `/favicon.ico`、`/favicon-32x32.png`、`/favicon-16x16.png`、`/apple-touch-icon.png`，只需在项目 `static/` 下放置同名文件即可覆盖，无需修改模板；`tileColor`（Windows 磁贴颜色）默认为 `#da532c`，需显式配置为 `#42b883`；转换脚本和源图不应纳入 git 追踪
+- **解决方案**：编写 Python Pillow 脚本 `scripts/gen_favicon.py` 从 `logo.jpg` 自动生成 4 个标准尺寸图标到 `static/`；在 `hugo.toml` 中设置 `iconColor`、`tileColor` 为 `#42b883`，`themeColor` 亮色/暗色均为 `#42b883`；在 `.gitignore` 中排除 `logo.jpg` 和 `scripts/`
+- **对 Agent 的强制约束**：针对图标等无需编译的静态资源替换，必须放置在项目根目录的 `static/` 下进行静默覆盖，禁止修改 `themes/FixIt/static/` 下的文件

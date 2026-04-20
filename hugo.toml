@@ -18,8 +18,13 @@ summaryLength = 200
     copy = true        # 允许复制
 
   [params.app]
-    # 优先使用 JetBrains Mono (程序员最爱) 或系统自带字体
     fontFamily = "JetBrains Mono, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+    iconColor = "#42b883"
+    tileColor = "#42b883"
+
+    [params.app.themeColor]
+      light = "#42b883"
+      dark = "#42b883"
 
   [params.page.toc]
     enable = true       # ✅ 强制开启
