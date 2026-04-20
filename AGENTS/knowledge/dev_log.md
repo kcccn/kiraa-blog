@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿# AGENTS/knowledge/dev_log.md
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# AGENTS/knowledge/dev_log.md
 <!-- File: AGENTS/knowledge/dev_log.md -->
 
 # 长期记忆与决策库
@@ -160,3 +160,11 @@
 - **踩坑点**：Cloudflare 代理下 `x-forwarded-for` 第一个 IP 可能是 CF 节点而非真实用户 IP，必须优先读取 `cf-connecting-ip`；`172.` 前缀过滤过宽，`172.16.0.0/12` 才是私有 IP 范围（172.16-172.31），原代码过滤了所有 `172.*` 导致部分公网 IP 被误判为内网；`ip-api.com` 免费版仅支持 HTTP 不支持 HTTPS，在 HTTPS 环境下可能被安全策略阻止；Vercel Logs 无任何调试输出无法定位问题
 - **解决方案**：`getClientIP()` 优先级改为 `cf-connecting-ip` > `x-real-ip` > `x-forwarded-for` > `remoteAddress`；`isPrivateIP()` 精确过滤 `172.16.0.0/12`（仅 172.16-172.31）；地理编码主服务切换为 `ipapi.co`（支持 HTTPS），`ip-api.com` 降级为备用；handler 中添加 `console.log` 输出 IP 和 Header 信息；前端 `fetchVisitCoords()` 添加状态码和错误日志
 - **对 Agent 的强制约束**：Cloudflare 代理架构下 IP 获取必须优先读取 `cf-connecting-ip`；私有 IP 判断 `172.` 前缀必须限定 `172.16.0.0/12` 范围，不得过滤所有 `172.*`；地理编码服务必须优先使用支持 HTTPS 的 API（如 `ipapi.co`），HTTP-only 服务仅作降级备用；后端 API 必须包含调试日志以便 Vercel Logs 排查
+
+### [2026-04-20] 升级访客坐标系统：Vercel Header 优先 + 日期后缀 + 三位小数
+
+- **事件类型**：功能升级
+- **触发原因**：同一坐标重复访问不叠加（Set 去重），无法实现热力效果；外部 API 调用延迟高且有限额；坐标精度不足
+- **踩坑点**：Vercel 原生提供 `x-vercel-ip-latitude` / `x-vercel-ip-longitude` Header，零延迟零外部调用，但之前未使用；Set 成员格式 `"lon,lat"` 导致同一坐标去重无法叠加；两位小数精度约 1.1km，三位小数约 110m 更精确；短时间大量访问会冲爆数据库，需天级精度防刷
+- **解决方案**：坐标获取优先级改为 Vercel Header > ipapi.co > ip-api.com；Set 成员格式改为 `"lon,lat,YYYY-MM-DD"`（三位小数 + 日期后缀），同一坐标不同天产生不同成员实现叠加发光；`migrateOldFormat()` 自动检测并清空旧格式数据；前端 `fetchVisitCoords()` 将 `[lon, lat, day]` 映射为 `[lon, lat, 0]`（海拔 0，S-23）
+- **对 Agent 的强制约束**：坐标获取必须优先读取 Vercel Header（`x-vercel-ip-latitude`/`x-vercel-ip-longitude`），外部 API 仅作降级；坐标精度必须为三位小数（`toFixed(3)`）；Set 成员必须追加日期后缀（`YYYY-MM-DD`）实现同坐标多天叠加

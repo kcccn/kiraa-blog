@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿# AGENTS/knowledge/blog_specs.md
+﻿﻿﻿﻿﻿﻿﻿# AGENTS/knowledge/blog_specs.md
 <!-- File: AGENTS/knowledge/blog_specs.md -->
 
 # Kiraa-Blog 项目规约
@@ -197,13 +197,16 @@ Vercel Serverless Function 放置在项目根目录 `api/` 下，文件名即路
 
 ### 4.2 `/api/visit` 接口
 
+- **坐标获取优先级**：`x-vercel-ip-latitude/longitude`（Vercel Header） > `ipapi.co`（HTTPS） > `ip-api.com`（HTTP）
 - **IP 获取优先级**：`cf-connecting-ip` > `x-real-ip` > `x-forwarded-for` > `remoteAddress`
 - **私有 IP 过滤**：精确匹配 RFC 1918（`10.0.0.0/8`、`172.16.0.0/12`、`192.168.0.0/16`），`172.` 仅过滤 172.16-172.31
-- **地理编码主服务**：`ipapi.co`（支持 HTTPS，免费 1000 次/天）
-- **地理编码备用**：`ip-api.com`（仅 HTTP，45 请求/分钟，降级使用）
-- **数据存储**：Upstash Redis Set（key: `kiraa:visit:coords`），自动裁剪超 5000 条记录
-- **响应格式**：`{ count: number, coords: [[lon, lat], ...] }`
-- **降级策略**：Redis 未配置返回 503；IP 解析失败跳过存储但仍返回已有数据
+- **数据存储**：Upstash Redis Set（key: `kiraa:visit:coords`），成员格式 `"lon,lat,YYYY-MM-DD"`（三位小数 + 日期后缀）
+- **坐标精度**：三位小数（`toFixed(3)`，约 110m）
+- **叠加机制**：同一坐标不同天产生不同 Set 成员，前端 `blendMode: 'lighter'` 实现叠加发光
+- **自动裁剪**：超过 5000 条记录时裁剪最早数据
+- **旧数据迁移**：`migrateOldFormat()` 自动检测并清空旧格式数据
+- **响应格式**：`{ count: number, coords: [[lon, lat, day], ...] }`
+- **降级策略**：Redis 未配置返回 503；坐标获取失败跳过存储但仍返回已有数据
 - **调试日志**：Vercel Logs 输出 IP、Header 来源、地理编码结果
 
 ### 4.3 环境变量

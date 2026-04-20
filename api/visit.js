@@ -1,9 +1,5 @@
 const { Redis } = require('@upstash/redis');
 
-const GEO_APIS = [
-  { url: 'https://ipapi.co', format: 'ipapi' },
-  { url: 'http://ip-api.com/json', format: 'ip-api' },
-];
 const REDIS_KEY = 'kiraa:visit:coords';
 const MAX_COORDS = 5000;
 
@@ -45,18 +41,17 @@ function isPrivateIP(ip) {
   return false;
 }
 
-async function geoLocateFromIPAPI(ip) {
-  try {
-    const res = await fetch(`http://ip-api.com/json/${ip}?fields=status,lat,lon`);
-    if (!res.ok) return null;
-    const data = await res.json();
-    if (data.status !== 'success' || data.lat == null || data.lon == null) {
-      return null;
+async function geoLocateFromVercelHeader(req) {
+  const vLat = req.headers['x-vercel-ip-latitude'];
+  const vLon = req.headers['x-vercel-ip-longitude'];
+  if (vLat && vLon) {
+    const lat = parseFloat(vLat);
+    const lon = parseFloat(vLon);
+    if (!isNaN(lat) && !isNaN(lon)) {
+      return { lat, lon };
     }
-    return { lat: data.lat, lon: data.lon };
-  } catch {
-    return null;
   }
+  return null;
 }
 
 async function geoLocateFromIPAPICo(ip) {
@@ -73,28 +68,66 @@ async function geoLocateFromIPAPICo(ip) {
   }
 }
 
-async function geoLocate(ip) {
+async function geoLocateFromIPAPI(ip) {
+  try {
+    const res = await fetch(`http://ip-api.com/json/${ip}?fields=status,lat,lon`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data.status !== 'success' || data.lat == null || data.lon == null) {
+      return null;
+    }
+    return { lat: data.lat, lon: data.lon };
+  } catch {
+    return null;
+  }
+}
+
+async function geoLocate(req, ip) {
+  const vercelResult = geoLocateFromVercelHeader(req);
+  if (vercelResult) {
+    console.log('[visit] Geolocated via Vercel Header:', ip, '→', vercelResult.lat, vercelResult.lon);
+    return vercelResult;
+  }
+
   if (isPrivateIP(ip)) {
     console.log('[visit] Private IP skipped:', ip);
     return null;
   }
+
   const result = await geoLocateFromIPAPICo(ip);
   if (result) {
     console.log('[visit] Geolocated via ipapi.co:', ip, '→', result.lat, result.lon);
     return result;
   }
+
   const fallback = await geoLocateFromIPAPI(ip);
   if (fallback) {
     console.log('[visit] Geolocated via ip-api.com:', ip, '→', fallback.lat, fallback.lon);
     return fallback;
   }
+
   console.log('[visit] Geolocation failed for IP:', ip);
   return null;
 }
 
+async function migrateOldFormat(redis) {
+  try {
+    const sample = await redis.srandmember(REDIS_KEY);
+    if (!sample) return;
+    const parts = String(sample).split(',');
+    if (parts.length === 2 || (parts.length === 3 && /^\d+$/.test(parts[2]))) {
+      console.log('[visit] Clearing old format data, sample:', String(sample));
+      await redis.del(REDIS_KEY);
+    }
+  } catch (err) {
+    console.error('[visit] Migration check error:', err.message);
+  }
+}
+
 async function storeCoord(redis, lon, lat) {
   try {
-    const coord = `${lon.toFixed(2)},${lat.toFixed(2)}`;
+    const day = new Date().toISOString().slice(0, 10);
+    const coord = `${lon.toFixed(3)},${lat.toFixed(3)},${day}`;
     const pipeline = redis.pipeline();
     pipeline.sadd(REDIS_KEY, coord);
     pipeline.scard(REDIS_KEY);
@@ -120,8 +153,9 @@ async function getAllCoords(redis) {
         const parts = String(m).split(',');
         const lon = parseFloat(parts[0]);
         const lat = parseFloat(parts[1]);
+        const day = parts[2] || '';
         if (isNaN(lon) || isNaN(lat)) return null;
-        return [lon, lat];
+        return [lon, lat, day];
       })
       .filter(Boolean);
   } catch (err) {
@@ -150,14 +184,18 @@ module.exports = async function handler(req, res) {
   }
 
   try {
+    await migrateOldFormat(redis);
+
     const ip = getClientIP(req);
     console.log('[visit] Request IP:', ip, 'Headers:', {
       'cf-connecting-ip': req.headers['cf-connecting-ip'] || '(none)',
+      'x-vercel-ip-latitude': req.headers['x-vercel-ip-latitude'] || '(none)',
+      'x-vercel-ip-longitude': req.headers['x-vercel-ip-longitude'] || '(none)',
       'x-real-ip': req.headers['x-real-ip'] || '(none)',
       'x-forwarded-for': req.headers['x-forwarded-for'] || '(none)',
     });
 
-    const geo = await geoLocate(ip);
+    const geo = await geoLocate(req, ip);
 
     if (geo) {
       await storeCoord(redis, geo.lon, geo.lat);
