@@ -6,7 +6,7 @@ const API_TIMEOUT_MS = 1500;
 const HEAT_DAYS = 30;
 const CIRCUIT_BREAKER_KEY = 'geo:circuit_breaker';
 const CIRCUIT_BREAKER_TTL = 60;
-const MIGRATION_KEY = 'kiraa:visit:migrated_v7';
+const MIGRATION_KEY = 'kiraa:visit:migrated_v8';
 
 const CARRIER_KEYWORDS = [
   'china mobile', 'china unicom', 'china telecom',
@@ -186,7 +186,6 @@ function computeIsProxy(source) {
 
 function computeType(geoResult, clientTzOffset) {
   if (!geoResult) return 0;
-  if (geoResult.isProxy) return 1;
   if (clientTzOffset != null && geoResult.offset != null) {
     const timeDiff = Math.abs((geoResult.offset / 60) + clientTzOffset);
     if (timeDiff > 30) return 1;
@@ -265,11 +264,21 @@ async function migrateOldFormat(redis) {
   try {
     const migrated = await redis.get(MIGRATION_KEY);
     if (migrated) return;
-    const oldKeys = ['kiraa:visit:coords', 'kiraa:visit:migrated_v3', 'kiraa:visit:migrated_v4'];
+    const oldKeys = ['kiraa:visit:coords', 'kiraa:visit:migrated_v3', 'kiraa:visit:migrated_v4', 'kiraa:visit:migrated_v7'];
     await redis.del(...oldKeys);
-    console.log('[visit] Cleared old architecture keys');
+    const now = new Date();
+    const delKeys = [];
+    for (let i = 0; i < 60; i++) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      const day = d.toISOString().split('T')[0];
+      delKeys.push(`geo:uv:${day}`, `geo:heat:${day}`);
+    }
+    await redis.del(...delKeys);
+    await redis.del('geo:circuit_breaker');
+    console.log('[visit] Cleared all V7 data for v8 migration');
     await redis.set(MIGRATION_KEY, '1');
-    console.log('[visit] Migration v7 flag set');
+    console.log('[visit] Migration v8 flag set');
   } catch (err) {
     console.error('[visit] Migration error:', err.message);
   }

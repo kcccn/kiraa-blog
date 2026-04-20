@@ -200,3 +200,11 @@
 - **踩坑点**：NAT 网关下数百用户共享同一出口 IP，单 IP 去重导致只记录一次；Redis `KEYS` 命令是 O(N) 阻塞扫描，生产环境严禁使用；ECharts-GL scatter3D 的 `symbolSize`/`opacity` 函数回调兼容性不稳定，需预计算
 - **解决方案**：弱指纹 `SHA256(IP|UA|Lang)[:8]` 替代 IP 去重；双键分离 `geo:uv:{day}`（Set 去重）+ `geo:heat:{day}`（Hash 聚合）；`SADD` 返回值判断新设备；`HINCRBY` 原子累加权重；30 天固定日期 Pipeline 读取（禁止 `KEYS`）；ip-api 429 触发 60s 熔断器；时区偏差 >30h 判定代理；前端预计算 symbolSize + RGBA 颜色
 - **对 Agent 的强制约束**：禁止存储真实 IP，必须使用弱指纹；去重与聚合必须使用双键分离；禁止使用 Redis `KEYS` 命令；ip-api 429 必须触发熔断器；前端视觉属性必须预计算，禁止依赖 ECharts-GL 函数回调
+
+### [2026-04-20] 红绿仲裁简化：仅保留时区偏差判定
+
+- **事件类型**：逻辑简化
+- **触发原因**：`isProxy`/`hosting`/`cloudProvider` 判定过于激进，大量正常用户被误标为红色基建节点；时区偏差是最可靠的代理检测信号
+- **踩坑点**：`proxy/hosting` 字段误报率高（企业专线、CDN 节点均被标记）；云厂商 AS 关键词匹配过于宽泛（阿里云/腾讯云国内用户大量命中）
+- **解决方案**：`computeType()` 移除 `isProxy`/`hosting`/`cloudProvider` 判定，仅保留时区偏差 >30h 判定；迁移 key 升级为 `v8`，一次性清空 60 天 `geo:uv:*` + `geo:heat:*` 数据；地球容器从 250px 放大至 500px
+- **对 Agent 的强制约束**：红绿仲裁仅使用时区偏差判定，禁止引入 `proxy/hosting`/AS 关键词等其他信号

@@ -206,7 +206,7 @@ Vercel Serverless Function 放置在项目根目录 `api/` 下，文件名即路
 - **去重机制**：`geo:uv:{YYYY-MM-DD}`（Set），`SADD` 返回 1 表示新设备，TTL 7 天
 - **聚合存储**：`geo:heat:{YYYY-MM-DD}`（Hash），Field=`lon,lat:type`，Value=权重，`HINCRBY` 原子累加，TTL 31 天
 - **坐标精度**：三位小数（`toFixed(3)`，约 110m）
-- **类型判定**：`computeType()` 联合判定 `proxy/hosting` 字段、AS 云厂商关键词、时区偏差 >30h
+- **类型判定**：`computeType()` 仅使用时区偏差 >30h 判定代理（IP 时区 vs 浏览器时区），不使用 `proxy/hosting`/AS 关键词
 - **熔断器**：ip-api 429 触发 `geo:circuit_breaker`（60s TTL），期间跳过定位但仍返回热力数据
 - **多日读取**：30 天固定日期列表 + Pipeline `HGETALL`，禁止使用 `KEYS` 命令
 - **前端参数**：`GET /api/visit?tzOffset={minutes}` 传递浏览器时区偏移

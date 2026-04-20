@@ -1,4 +1,4 @@
-﻿/* assets/css/_custom.scss */
+﻿﻿﻿﻿﻿﻿/* assets/css/_custom.scss */
 
 /* ------------------------------------------------------- */
 /* 方案：直接覆盖 CSS 变量 (推荐，兼容性最好)            */
@@ -65,8 +65,8 @@
 }
 
 .echarts-globe {
-    width: 250px;
-    height: 250px;
+    width: 500px;
+    height: 500px;
     max-width: calc(100vw - 2rem);
     max-height: calc(100vw - 2rem);
 }
