@@ -102,10 +102,46 @@
         </div>
       {{- end -}}
 
-      {{- /* RevolverMaps 3D 访客地球 */ -}}
-      <div class="revolvermaps-globe">
-        <script type="text/javascript" src="https://rf.revolvermaps.com/0/0/8.js?i=5m8e0a7z6m9&amp;m=0&amp;s=180&amp;c=42b883&amp;cr1=ffffff&amp;f=arial&amp;l=33" async="async"></script>
+      {{- /* ECharts 3D 地球 */ -}}
+      <div class="echarts-globe-wrapper">
+        <div id="echarts-globe" style="width:250px;height:250px;"></div>
       </div>
+      <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/echarts-gl@2/dist/echarts-gl.min.js"></script>
+      <script>
+      (function () {
+        var chartDom = document.getElementById('echarts-globe');
+        if (!chartDom) return;
+        var chart = echarts.init(chartDom);
+        var option = {
+          backgroundColor: 'transparent',
+          globe: {
+            baseTexture: 'https://cdn.jsdelivr.net/npm/echarts@5/map/data/world.jpg',
+            environment: 'transparent',
+            shading: 'color',
+            atmosphere: {
+              show: true,
+              color: '#42b883',
+              glowPower: 3,
+              innerGlowPower: 1.5
+            },
+            viewControl: {
+              autoRotate: true,
+              autoRotateSpeed: 5,
+              distance: 180
+            },
+            itemStyle: {
+              borderWidth: 0.5,
+              borderColor: '#42b883'
+            }
+          }
+        };
+        chart.setOption(option);
+        window.addEventListener('resize', function () {
+          chart.resize();
+        });
+      })();
+      </script>
     </div>
   </footer>
 {{- end -}}

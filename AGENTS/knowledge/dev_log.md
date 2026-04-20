@@ -88,3 +88,11 @@
 - **踩坑点**：`customPartials.footer` 机制经构建验证实际已成功注入 HTML 到页脚，但用户反馈前端未显示地球。根因可能是 RevolverMaps 服务 ID 无效（`5m8e0a7z6m9` 为占位值）或外部 JS 加载失败，而非 Hugo 模板层面的问题。按用户要求切换到同名模板覆盖方案（路径 D），将主题 `footer.html` 完整复制到项目 `layouts/_partials/footer.html` 并内嵌脚本
 - **解决方案**：废弃 `customPartials.footer` 配置和独立 partial 文件，改用同名模板覆盖 `layouts/_partials/footer.html`，在 `footer-container` 闭合前注入 RevolverMaps 脚本
 - **对 Agent 的强制约束**：使用第三方外部 JS 服务时，必须先验证服务 ID 的有效性，不得使用占位值；模板覆盖方案（路径 D）需完整复制主题源码再修改，主题升级时必须手动同步更新覆盖文件
+
+### [2026-04-20] 废弃 RevolverMaps，切换为 ECharts 3D 地球
+
+- **事件类型**：功能替换
+- **触发原因**：RevolverMaps 在国内网络环境下加载阻塞，严重影响首屏渲染速度
+- **踩坑点**：依赖特定外网通信的第三方追踪脚本在国内不可用；ECharts 地球组件需设置 `backgroundColor: 'transparent'` 和 `environment: 'transparent'` 才能兼容 FixIt 主题的亮色/暗色模式切换
+- **解决方案**：在 `layouts/_partials/footer.html` 中移除 RevolverMaps 脚本，替换为 ECharts + ECharts-GL 3D 地球，通过 jsDelivr CDN 引入依赖，大气层颜色设为 `#42b883`（ADR-003），包含防报错逻辑和 resize 自适应
+- **对 Agent 的强制约束**：禁止依赖特定外网通信的第三方追踪脚本，优先选用国内可达的 CDN（如 jsDelivr）；ECharts 组件必须设置透明背景以兼容主题暗色/亮色模式切换

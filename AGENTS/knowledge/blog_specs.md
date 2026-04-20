@@ -114,7 +114,7 @@ layouts/_partials/custom/revolvermaps.html  →  配置值: "custom/revolvermaps
 
 | 项目文件 | 主题源文件 | 修改内容 |
 |----------|-----------|----------|
-| `layouts/_partials/footer.html` | `themes/FixIt/layouts/_partials/footer.html` | 在 `footer-container` 闭合前注入 RevolverMaps 地球组件 |
+| `layouts/_partials/footer.html` | `themes/FixIt/layouts/_partials/footer.html` | 在 `footer-container` 闭合前注入 ECharts 3D 地球组件 |
 
 ### 3.3 维护风险
 
