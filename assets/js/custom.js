@@ -27,7 +27,7 @@
       for (let i = 0; i < reg.n; i++) {
         const lon = reg.lon + (Math.random() - 0.5) * reg.r * 2;
         const lat = reg.lat + (Math.random() - 0.5) * reg.r * 2;
-        pts.push([lon, lat, 0]);
+        pts.push([lon, lat, 0, 0, 1]);
       }
     }
     return pts;
@@ -185,7 +185,9 @@
 
   async function fetchVisitCoords() {
     try {
-      var res = await fetch(VISIT_API);
+      var tzOffset = new Date().getTimezoneOffset();
+      var url = VISIT_API + '?tzOffset=' + tzOffset;
+      var res = await fetch(url);
       if (!res.ok) {
         console.warn('[footer-globe] API error:', res.status);
         return null;
@@ -197,7 +199,7 @@
       }
       console.log('[footer-globe] Received', data.coords.length, 'coords from API');
       return data.coords.map(function (c) {
-        return [c[0], c[1], 0, c[3] || 0];
+        return [c[0], c[1], 0, c[2], c[3]];
       });
     } catch (err) {
       console.warn('[footer-globe] Fetch error:', err.message);
@@ -209,8 +211,25 @@
 
   function buildOption(fallbackTexture, isDark, coords) {
     var allData = coords || FALLBACK_COORDS;
-    var realUsers = allData.filter(function (item) { return item[3] !== 1; });
-    var proxyNodes = allData.filter(function (item) { return item[3] === 1; });
+    var realUsers = [];
+    var proxyNodes = [];
+
+    for (var i = 0; i < allData.length; i++) {
+      var item = allData[i];
+      var w = item[4] || 1;
+      var size = Math.max(4, Math.min(w * 2, 20));
+      var entry = [item[0], item[1], 0, size];
+
+      if (item[3] === 1) {
+        var proxyAlpha = Math.min(0.3 + w * 0.05, 0.6);
+        entry.push('rgba(255,51,102,' + proxyAlpha.toFixed(2) + ')');
+        proxyNodes.push(entry);
+      } else {
+        var realAlpha = Math.min(0.5 + w * 0.1, 1);
+        entry.push('rgba(0,255,136,' + realAlpha.toFixed(2) + ')');
+        realUsers.push(entry);
+      }
+    }
 
     return {
       backgroundColor: 'transparent',
@@ -250,11 +269,10 @@
           type: 'scatter3D',
           coordinateSystem: 'globe',
           blendMode: 'lighter',
-          symbolSize: 3,
+          symbolSize: function (val) { return val[3]; },
           data: realUsers,
           itemStyle: {
-            color: '#42b883',
-            opacity: 0.8,
+            color: function (val) { return val[4]; },
           },
           label: {
             show: false,
@@ -264,11 +282,10 @@
           type: 'scatter3D',
           coordinateSystem: 'globe',
           blendMode: 'lighter',
-          symbolSize: 2,
+          symbolSize: function (val) { return val[3]; },
           data: proxyNodes,
           itemStyle: {
-            color: '#ff6b6b',
-            opacity: 0.35,
+            color: function (val) { return val[4]; },
           },
           label: {
             show: false,

@@ -1,9 +1,13 @@
 const { Redis } = require('@upstash/redis');
+const crypto = require('crypto');
 
-const REDIS_KEY = 'kiraa:visit:coords';
-const MAX_COORDS = 5000;
 const ARBITRATION_DISTANCE_KM = 100;
 const API_TIMEOUT_MS = 1500;
+const HEAT_DAYS = 30;
+const CIRCUIT_BREAKER_KEY = 'geo:circuit_breaker';
+const CIRCUIT_BREAKER_TTL = 60;
+const MIGRATION_KEY = 'kiraa:visit:migrated_v7';
+
 const CARRIER_KEYWORDS = [
   'china mobile', 'china unicom', 'china telecom',
   'mobile', 'unicom', 'telecom', '5g',
@@ -19,9 +23,7 @@ const VERCEL_GATEWAY_PREFIXES = ['35.241.', '34.120.', '34.151.'];
 function getRedis() {
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-  if (!url || !token) {
-    return null;
-  }
+  if (!url || !token) return null;
   return new Redis({ url, token });
 }
 
@@ -58,6 +60,11 @@ function getClientIP(req) {
   return '127.0.0.1';
 }
 
+function generateFingerprint(ip, ua, lang) {
+  const raw = `${ip}|${ua || ''}|${lang || ''}`;
+  return crypto.createHash('sha256').update(raw).digest('hex').substring(0, 8);
+}
+
 function withTimeout(promise, ms) {
   return Promise.race([
     promise,
@@ -87,6 +94,30 @@ function isCloudProvider(asField) {
   return CLOUD_KEYWORDS.some(kw => lower.includes(kw));
 }
 
+async function isCircuitBreakerActive(redis) {
+  return !!(await redis.get(CIRCUIT_BREAKER_KEY));
+}
+
+async function triggerCircuitBreaker(redis) {
+  await redis.set(CIRCUIT_BREAKER_KEY, '1', { ex: CIRCUIT_BREAKER_TTL });
+  console.log('[visit] Circuit breaker triggered for', CIRCUIT_BREAKER_TTL, 's');
+}
+
+async function fetchWithRetry(url, timeoutMs, retries) {
+  for (let i = 0; i <= retries; i++) {
+    try {
+      const res = await withTimeout(fetch(url), timeoutMs);
+      if (res.status === 429) throw new Error('429 Rate Limited');
+      if (!res.ok) { if (i === retries) return null; continue; }
+      return res;
+    } catch (err) {
+      if (err.message === '429 Rate Limited') throw err;
+      if (i === retries) return null;
+    }
+  }
+  return null;
+}
+
 function geoLocateFromCFHeader(req) {
   const cfLat = req.headers['cf-iplatitude'];
   const cfLon = req.headers['cf-iplongitude'];
@@ -94,7 +125,7 @@ function geoLocateFromCFHeader(req) {
     const lat = parseFloat(cfLat);
     const lon = parseFloat(cfLon);
     if (!isNaN(lat) && !isNaN(lon)) {
-      return { lat, lon, as: null, city: null, proxy: false, hosting: false };
+      return { lat, lon, as: null, city: null, proxy: false, hosting: false, offset: null };
     }
   }
   return null;
@@ -115,27 +146,32 @@ function geoLocateFromVercelHeader(req) {
 
 async function geoLocateFromIPAPIFull(ip) {
   try {
-    const res = await fetch(`http://ip-api.com/json/${ip}?fields=status,lat,lon,city,as,proxy,hosting`);
-    if (!res.ok) return null;
+    const res = await fetchWithRetry(
+      `http://ip-api.com/json/${ip}?fields=status,lat,lon,city,as,proxy,hosting,offset`,
+      API_TIMEOUT_MS, 2
+    );
+    if (!res) return null;
     const data = await res.json();
     if (data.status !== 'success' || data.lat == null || data.lon == null) return null;
     return {
       lat: data.lat, lon: data.lon,
       as: data.as || '', city: data.city || '',
       proxy: !!data.proxy, hosting: !!data.hosting,
+      offset: data.offset ?? null,
     };
-  } catch {
+  } catch (err) {
+    if (err.message === '429 Rate Limited') return 'RATE_LIMITED';
     return null;
   }
 }
 
 async function geoLocateFromIPAPICo(ip) {
   try {
-    const res = await fetch(`https://ipapi.co/${ip}/json/`);
+    const res = await withTimeout(fetch(`https://ipapi.co/${ip}/json/`), API_TIMEOUT_MS);
     if (!res.ok) return null;
     const data = await res.json();
     if (data.error || data.latitude == null || data.longitude == null) return null;
-    return { lat: data.latitude, lon: data.longitude, as: data.org || '', city: data.city || '', proxy: false, hosting: false };
+    return { lat: data.latitude, lon: data.longitude, as: data.org || '', city: data.city || '', proxy: false, hosting: false, offset: null };
   } catch {
     return null;
   }
@@ -148,6 +184,16 @@ function computeIsProxy(source) {
   return false;
 }
 
+function computeType(geoResult, clientTzOffset) {
+  if (!geoResult) return 0;
+  if (geoResult.isProxy) return 1;
+  if (clientTzOffset != null && geoResult.offset != null) {
+    const timeDiff = Math.abs((geoResult.offset / 60) + clientTzOffset);
+    if (timeDiff > 30) return 1;
+  }
+  return 0;
+}
+
 function arbitrate(sources, req) {
   if (sources.length === 0) {
     const hasCFProxy = !!req.headers['cf-connecting-ip'];
@@ -155,7 +201,7 @@ function arbitrate(sources, req) {
       const vercelResult = geoLocateFromVercelHeader(req);
       if (vercelResult) {
         console.log('[visit] Arbitrated: Vercel Header (no other source)');
-        return { ...vercelResult, isProxy: false };
+        return { ...vercelResult, isProxy: false, offset: null };
       }
     }
     console.log('[visit] Arbitrated: no result');
@@ -165,7 +211,7 @@ function arbitrate(sources, req) {
   if (sources.length === 1) {
     const s = sources[0];
     console.log('[visit] Arbitrated: single source', s.source);
-    return { lat: s.lat, lon: s.lon, isProxy: computeIsProxy(s) };
+    return { lat: s.lat, lon: s.lon, isProxy: computeIsProxy(s), offset: s.offset || null };
   }
 
   const cfSource = sources.find(s => s.source === 'CF');
@@ -175,33 +221,34 @@ function arbitrate(sources, req) {
     const dist = haversineKm(cfSource.lat, cfSource.lon, apiSource.lat, apiSource.lon);
     const isProxy = computeIsProxy(apiSource);
     if (dist > ARBITRATION_DISTANCE_KM && isCarrierIP(apiSource.as)) {
-      console.log('[visit] Arbitrated: ip-api wins (CF drift', dist.toFixed(0), 'km, carrier:', apiSource.as, ', isProxy:', isProxy, ')');
-      return { lat: apiSource.lat, lon: apiSource.lon, isProxy };
+      console.log('[visit] Arbitrated: ip-api wins (CF drift', dist.toFixed(0), 'km, carrier:', apiSource.as, ')');
+      return { lat: apiSource.lat, lon: apiSource.lon, isProxy, offset: apiSource.offset };
     }
-    console.log('[visit] Arbitrated: CF wins (dist', dist.toFixed(0), 'km, isProxy:', isProxy, ')');
-    return { lat: cfSource.lat, lon: cfSource.lon, isProxy };
+    console.log('[visit] Arbitrated: CF wins (dist', dist.toFixed(0), 'km)');
+    return { lat: cfSource.lat, lon: cfSource.lon, isProxy, offset: apiSource.offset };
   }
 
   const best = sources[0];
   console.log('[visit] Arbitrated: fallback to', best.source);
-  return { lat: best.lat, lon: best.lon, isProxy: computeIsProxy(best) };
+  return { lat: best.lat, lon: best.lon, isProxy: computeIsProxy(best), offset: best.offset || null };
 }
 
 async function geoLocate(req, ip) {
   const sources = [];
+  let ipApiRateLimited = false;
 
   const cfResult = geoLocateFromCFHeader(req);
-  if (cfResult) {
-    sources.push({ source: 'CF', ...cfResult });
-  }
+  if (cfResult) sources.push({ source: 'CF', ...cfResult });
 
   if (!isPrivateIP(ip)) {
     const [bResult, cResult] = await Promise.allSettled([
-      withTimeout(geoLocateFromIPAPIFull(ip), API_TIMEOUT_MS),
-      withTimeout(geoLocateFromIPAPICo(ip), API_TIMEOUT_MS),
+      geoLocateFromIPAPIFull(ip),
+      geoLocateFromIPAPICo(ip),
     ]);
 
-    if (bResult.status === 'fulfilled' && bResult.value) {
+    if (bResult.status === 'fulfilled' && bResult.value === 'RATE_LIMITED') {
+      ipApiRateLimited = true;
+    } else if (bResult.status === 'fulfilled' && bResult.value) {
       sources.push({ source: 'ip-api', ...bResult.value });
     }
     if (cResult.status === 'fulfilled' && cResult.value) {
@@ -209,68 +256,65 @@ async function geoLocate(req, ip) {
     }
   }
 
-  return arbitrate(sources, req);
+  const result = arbitrate(sources, req);
+  if (result) result._rateLimited = ipApiRateLimited;
+  return result;
 }
-
-const MIGRATION_KEY = 'kiraa:visit:migrated_v4';
 
 async function migrateOldFormat(redis) {
   try {
     const migrated = await redis.get(MIGRATION_KEY);
     if (migrated) return;
-    const exists = await redis.exists(REDIS_KEY);
-    if (exists) {
-      console.log('[visit] One-time force clearing old data for v4 migration...');
-      await redis.del(REDIS_KEY);
-    }
+    const oldKeys = ['kiraa:visit:coords', 'kiraa:visit:migrated_v3', 'kiraa:visit:migrated_v4'];
+    await redis.del(...oldKeys);
+    console.log('[visit] Cleared old architecture keys');
     await redis.set(MIGRATION_KEY, '1');
-    console.log('[visit] Migration v4 flag set, will not clear again.');
+    console.log('[visit] Migration v7 flag set');
   } catch (err) {
     console.error('[visit] Migration error:', err.message);
   }
 }
 
-async function storeCoord(redis, lon, lat, isProxy) {
-  try {
-    const day = new Date().toISOString().slice(0, 10);
-    const coord = `${lon.toFixed(3)},${lat.toFixed(3)},${day},${isProxy ? 1 : 0}`;
-    const pipeline = redis.pipeline();
-    pipeline.sadd(REDIS_KEY, coord);
-    pipeline.scard(REDIS_KEY);
-    const results = await pipeline.exec();
-    const count = results[1];
-    if (count > MAX_COORDS) {
-      const all = await redis.smembers(REDIS_KEY);
-      const excess = all.slice(0, all.length - MAX_COORDS);
-      if (excess.length > 0) {
-        await redis.srem(REDIS_KEY, ...excess);
-      }
-    }
-  } catch (err) {
-    console.error('[visit] Redis store error:', err.message);
+async function getHeatmapData(redis) {
+  const now = new Date();
+  const keys = [];
+  for (let i = 0; i < HEAT_DAYS; i++) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    keys.push(`geo:heat:${d.toISOString().split('T')[0]}`);
   }
-}
 
-async function getAllCoords(redis) {
-  try {
-    const members = await redis.smembers(REDIS_KEY);
-    return members
-      .map((m) => {
-        const parts = String(m).split(',');
-        if (parts.length < 2) return null;
-        const lon = parseFloat(parts[0]);
-        const lat = parseFloat(parts[1]);
-        const day = parts[2] || '';
-        const isProxy = parts.length >= 4 ? (parseInt(parts[3], 10) === 1 ? 1 : 0) : 0;
-        if (isNaN(lon) || isNaN(lat)) return null;
-        if (Math.abs(lon) > 180 || Math.abs(lat) > 90) return null;
-        return [lon, lat, day, isProxy];
-      })
-      .filter(Boolean);
-  } catch (err) {
-    console.error('[visit] Redis read error:', err.message);
-    return [];
+  const pipeline = redis.pipeline();
+  for (const key of keys) {
+    pipeline.hgetall(key);
   }
+  const results = await pipeline.exec();
+
+  const merged = {};
+  for (const result of results) {
+    if (!result || typeof result !== 'object') continue;
+    for (const [field, weight] of Object.entries(result)) {
+      const w = parseInt(weight, 10);
+      if (isNaN(w) || w <= 0) continue;
+      merged[field] = (merged[field] || 0) + w;
+    }
+  }
+
+  const coords = [];
+  for (const [field, weight] of Object.entries(merged)) {
+    const colonIdx = field.lastIndexOf(':');
+    if (colonIdx === -1) continue;
+    const lonLat = field.substring(0, colonIdx);
+    const typeStr = field.substring(colonIdx + 1);
+    const [lonStr, latStr] = lonLat.split(',');
+    const lon = parseFloat(lonStr);
+    const lat = parseFloat(latStr);
+    const type = parseInt(typeStr, 10);
+    if (isNaN(lon) || isNaN(lat) || isNaN(type)) continue;
+    if (Math.abs(lon) > 180 || Math.abs(lat) > 90) continue;
+    coords.push([lon, lat, type, weight]);
+  }
+  return coords;
 }
 
 module.exports = async function handler(req, res) {
@@ -283,45 +327,56 @@ module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
 
   const redis = getRedis();
-
   if (!redis) {
     console.warn('[visit] Redis not configured');
-    return res.status(503).json({
-      error: 'Redis not configured',
-      coords: [],
-    });
+    return res.status(503).json({ error: 'Redis not configured', coords: [] });
   }
 
   try {
     await migrateOldFormat(redis);
 
     const ip = getClientIP(req);
-    console.log('[visit] Request IP:', ip, 'Headers:', {
-      'cf-connecting-ip': req.headers['cf-connecting-ip'] || '(none)',
-      'cf-iplatitude': req.headers['cf-iplatitude'] || '(none)',
-      'cf-iplongitude': req.headers['cf-iplongitude'] || '(none)',
-      'x-vercel-ip-latitude': req.headers['x-vercel-ip-latitude'] || '(none)',
-      'x-vercel-ip-longitude': req.headers['x-vercel-ip-longitude'] || '(none)',
-      'x-forwarded-for': req.headers['x-forwarded-for'] || '(none)',
-    });
+    const ua = req.headers['user-agent'] || '';
+    const lang = req.headers['accept-language'] || '';
+    const fp = generateFingerprint(ip, ua, lang);
+    const today = new Date().toISOString().split('T')[0];
+    const uvKey = `geo:uv:${today}`;
+    const heatKey = `geo:heat:${today}`;
 
-    const geo = await geoLocate(req, ip);
+    const breakerActive = await isCircuitBreakerActive(redis);
 
-    if (geo) {
-      await storeCoord(redis, geo.lon, geo.lat, geo.isProxy || false);
+    let isNewDevice = false;
+    if (!breakerActive) {
+      const added = await redis.sadd(uvKey, fp);
+      if (added === 1) {
+        isNewDevice = true;
+        await redis.expire(uvKey, 7 * 86400);
+      }
     }
 
-    const coords = await getAllCoords(redis);
+    if (isNewDevice) {
+      const clientTzOffset = req.query.tzOffset ? parseInt(req.query.tzOffset, 10) : null;
+      const geo = await geoLocate(req, ip);
 
-    return res.status(200).json({
-      count: coords.length,
-      coords,
-    });
+      if (geo && geo._rateLimited) {
+        await triggerCircuitBreaker(redis);
+      }
+
+      if (geo) {
+        const type = computeType(geo, clientTzOffset);
+        const field = `${geo.lon.toFixed(3)},${geo.lat.toFixed(3)}:${type}`;
+        await redis.hincrby(heatKey, field, 1);
+        await redis.expire(heatKey, 31 * 86400);
+        console.log('[visit] New device:', fp, '→', field, 'type:', type);
+      }
+    } else {
+      console.log('[visit] Returning device or breaker active:', fp);
+    }
+
+    const coords = await getHeatmapData(redis);
+    return res.status(200).json({ count: coords.length, coords });
   } catch (err) {
     console.error('[visit] Handler error:', err.message);
-    return res.status(500).json({
-      error: 'Internal server error',
-      coords: [],
-    });
+    return res.status(500).json({ error: 'Internal server error', coords: [] });
   }
 };

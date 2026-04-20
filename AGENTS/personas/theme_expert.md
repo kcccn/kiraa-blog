@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿# AGENTS/personas/theme_expert.md
+﻿﻿﻿﻿﻿﻿# AGENTS/personas/theme_expert.md
 <!-- File: AGENTS/personas/theme_expert.md -->
 
 # 角色定义：主题维护专家（Theme Expert）
@@ -82,6 +82,10 @@ Theme Expert 执行任何操作时，**必须严格遵循** `AGENTS/workflows/ma
 | S-31 | 地理定位必须使用多源并行仲裁（`Promise.allSettled`），禁止顺序降级 | 顺序降级最坏情况需等待 3 个 API 超时（4.5s），并行可将延迟压缩至 1.5s（踩坑记录 2026-04-20） |
 | S-32 | `ip-api.com` 必须获取 `as` 字段用于运营商纠偏；IP 获取必须过滤 Vercel 内部网关 IP | 5G 运营商出口 IP 的 CF 定位偏移可达数百公里，`as` 字段可识别运营商并纠偏（踩坑记录 2026-04-20） |
 | S-33 | `isProxy` 标记必须从 ip-api.com 的 `proxy/hosting` 字段及 AS 云厂商关键词联合判定；存储格式必须为四段式 `lon,lat,YYYY-MM-DD,isProxy`；前端必须拆分双 series 差异化显示 | VPN/机房节点需染色区分，单一字段无法覆盖云厂商托管 IP（踩坑记录 2026-04-20） |
+| S-34 | 禁止存储真实 IP，必须使用 `SHA256(IP\|UA\|Lang)[:8]` 弱指纹 | PII 隐私风险 + NAT 下多设备共享 IP 导致坐标丢失（踩坑记录 2026-04-20） |
+| S-35 | 去重与聚合必须使用双键分离（`geo:uv:{day}` Set + `geo:heat:{day}` Hash） | 单 Set 架构无法实现权重聚合，NAT 下坐标丢失（踩坑记录 2026-04-20） |
+| S-36 | 禁止使用 Redis `KEYS` 命令，必须使用固定日期列表 + Pipeline | `KEYS` 是 O(N) 阻塞扫描，生产环境严禁（踩坑记录 2026-04-20） |
+| S-37 | ip-api 429 必须触发 60s 熔断器；前端视觉属性必须预计算 | 429 限流无保护会持续失败；ECharts-GL 函数回调兼容性不稳定（踩坑记录 2026-04-20） |
 
 ## 能力要求
 

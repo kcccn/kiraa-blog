@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# AGENTS/knowledge/dev_log.md
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# AGENTS/knowledge/dev_log.md
 <!-- File: AGENTS/knowledge/dev_log.md -->
 
 # 长期记忆与决策库
@@ -192,3 +192,11 @@
 - **踩坑点**：`ip-api.com` 提供 `proxy` 和 `hosting` 字段可直接判断代理/机房 IP；云厂商 AS 字段（如 AWS、Azure）可作为补充判断依据；CF Header 和 ipapi.co 无法提供 proxy 信息，需从并行的 ip-api 结果中继承 `isProxy` 标记
 - **解决方案**：`geoLocateFromIPAPIFull()` 扩展 `fields` 增加 `proxy,hosting`；新增 `CLOUD_KEYWORDS` 常量和 `isCloudProvider()` 函数；新增 `computeIsProxy()` 联合判定（`proxy || hosting || isCloudProvider(as)`）；`arbitrate()` 所有返回路径携带 `isProxy` 字段，CF 胜出时仍从 ip-api 继承 `isProxy`；`storeCoord()` 格式升级为 `lon,lat,YYYY-MM-DD,isProxy`；`getAllCoords()` 兼容三段/四段解析；前端 `buildOption()` 拆分双 series（真实用户 `#42b883` + 代理节点 `#ff6b6b` 幽灵红半透明）；迁移 key 升级为 `v4`
 - **对 Agent 的强制约束**：`isProxy` 标记必须从 ip-api.com 的 `proxy/hosting` 字段及 AS 云厂商关键词联合判定；存储格式必须为四段式 `lon,lat,YYYY-MM-DD,isProxy`；前端必须拆分双 series 差异化显示
+
+### [2026-04-20] V7.1 架构升级：弱指纹 + 双键分离聚合 + 熔断器
+
+- **事件类型**：架构重构
+- **触发原因**：NAT 下多设备共享 IP 导致坐标丢失；单 Set 架构无法实现权重聚合；ip-api 429 限流无保护；真实 IP 存储存在 PII 风险
+- **踩坑点**：NAT 网关下数百用户共享同一出口 IP，单 IP 去重导致只记录一次；Redis `KEYS` 命令是 O(N) 阻塞扫描，生产环境严禁使用；ECharts-GL scatter3D 的 `symbolSize`/`opacity` 函数回调兼容性不稳定，需预计算
+- **解决方案**：弱指纹 `SHA256(IP|UA|Lang)[:8]` 替代 IP 去重；双键分离 `geo:uv:{day}`（Set 去重）+ `geo:heat:{day}`（Hash 聚合）；`SADD` 返回值判断新设备；`HINCRBY` 原子累加权重；30 天固定日期 Pipeline 读取（禁止 `KEYS`）；ip-api 429 触发 60s 熔断器；时区偏差 >30h 判定代理；前端预计算 symbolSize + RGBA 颜色
+- **对 Agent 的强制约束**：禁止存储真实 IP，必须使用弱指纹；去重与聚合必须使用双键分离；禁止使用 Redis `KEYS` 命令；ip-api 429 必须触发熔断器；前端视觉属性必须预计算，禁止依赖 ECharts-GL 函数回调
