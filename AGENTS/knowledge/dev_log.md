@@ -96,3 +96,11 @@
 - **踩坑点**：依赖特定外网通信的第三方追踪脚本在国内不可用；ECharts 地球组件需设置 `backgroundColor: 'transparent'` 和 `environment: 'transparent'` 才能兼容 FixIt 主题的亮色/暗色模式切换
 - **解决方案**：在 `layouts/_partials/footer.html` 中移除 RevolverMaps 脚本，替换为 ECharts + ECharts-GL 3D 地球，通过 jsDelivr CDN 引入依赖，大气层颜色设为 `#42b883`（ADR-003），包含防报错逻辑和 resize 自适应
 - **对 Agent 的强制约束**：禁止依赖特定外网通信的第三方追踪脚本，优先选用国内可达的 CDN（如 jsDelivr）；ECharts 组件必须设置透明背景以兼容主题暗色/亮色模式切换
+
+### [2026-04-20] 修复 footer 3D 地球回归问题：恢复 customPartials 并改用本地资源
+
+- **事件类型**：Bug 修复
+- **触发原因**：review 发现 footer 3D 地球存在纹理 404、整份模板覆盖和绕过 FixIt 生命周期等风险
+- **踩坑点**：此前问题根因不是 `customPartials.footer` 缺少主题钩子；FixIt 的 `custom-footer` block 实际可用。真正的问题是远程 `world.jpg` 失效、远程 `echarts-gl` 不稳定，以及 FixIt 原生 `initEcharts()` 固定使用 `renderer: 'svg'`，无法直接承载 `echarts-gl` 的 WebGL globe
+- **解决方案**：删除 `layouts/_partials/footer.html` 覆盖文件，恢复 `params.customPartials.head` + `params.customPartials.footer`；在 `footer-globe-head.html` 中做页面级 `hasEcharts` 开关，在 `footer-globe.html` 中仅输出稳定的资源配置节点；在 `assets/js/custom.js` 中以 `renderer: 'canvas'` 动态插入并初始化 footer globe，并接入 FixIt 的 theme-switch / resize 事件；将 `echarts-gl` 和 `world.jpg` 固化到项目 `assets/`
+- **对 Agent 的强制约束**：`customPartials.footer` 可作为页脚组件的主路径，不得因第三方资源失效误判为主题钩子失效；但由于 FixIt footer 运行在 `partialCached` 路径下，页面级分支和 `.Store.Set` 必须放在 `customPartials.head` 或 `assets/js/custom.js` 中；涉及 `echarts-gl` / WebGL 的场景，必须走项目侧 `assets/js/custom.js` 挂接 FixIt 生命周期，不得复用 FixIt 默认的 SVG ECharts 初始化路径；地球纹理和运行库优先固化到仓库本地资源，禁止依赖远程纹理 URL

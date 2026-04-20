@@ -26,6 +26,10 @@ summaryLength = 200
     keepStatic = false  # false = 悬浮在右侧 (Vue/现代文档风格)；true = 固定在文章正文开头
     auto = true         # true = 自动折叠，只显示当前章节
 
+  [params.customPartials]
+    head = ["custom/footer-globe-head.html"]
+    footer = ["custom/footer-globe.html"]
+
 [markup]
   _merge = "shallow"
   [markup.highlight]

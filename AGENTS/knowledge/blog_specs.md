@@ -63,7 +63,7 @@ FixIt 主题内置 `customPartials` 配置，允许在不覆盖模板文件的�
 
 ```toml
 [params.customPartials]
-  footer = ["custom/revolvermaps.html"]
+  footer = ["custom/footer-globe.html"]
 ```
 
 ### 2.2 可用注入点
@@ -100,6 +100,38 @@ layouts/_partials/custom/revolvermaps.html  →  配置值: "custom/revolvermaps
 
 **局限性**：`customPartials` 依赖主题模板中对应的 `{{ block }}` 钩子才能生效。如果主题的某个模板未包含对应钩子，则 `customPartials` 注入的内容不会被渲染。当 `customPartials` 不满足需求时，需降级为同名模板覆盖方案（路径 D）。
 
+**额外注意**：FixIt 的 `custom-footer` 运行在 `partialCached "footer.html"` 路径下。也就是说，页脚 custom partial 内不适合放“依赖当前页面上下文变化”的逻辑，例如：
+
+- 在 footer partial 内按页面类型做条件分支
+- 在 footer partial 内调用 `.Store.Set "hasEcharts" true`
+- 在 footer partial 内直接输出只应出现在特定页面的动态 DOM
+
+这类页面级逻辑应前移到 `customPartials.head` 或后移到 `assets/js/custom.js`。
+
+### 2.5 脚本顺序约束
+
+FixIt 的 `custom-assets` block 位于 `theme.js` **之后**。因此，凡是要求“在主题初始化前就必须存在”的库，不应通过 `customPartials.assets` 注入，而应采用以下路径：
+
+```
+customPartials.head 设置页面级 Store / 开关
+        +
+customPartials.footer 输出稳定的配置节点
+        +
+assets/js/custom.js 负责运行时注入 DOM 与初始化
+        +
+assets/ 本地资源提供 JS / 图片
+```
+
+### 2.6 Footer 3D 地球集成规范
+
+页脚 3D 地球的标准集成方式为：
+
+1. 在 `hugo.toml` 中注册 `params.customPartials.head` 与 `params.customPartials.footer`
+2. 在 `layouts/_partials/custom/footer-globe-head.html` 中做页面级判定，并调用 `.Store.Set "hasEcharts" true`
+3. 在 `layouts/_partials/custom/footer-globe.html` 中仅输出稳定的资源配置节点，不在该 partial 中放页面级分支
+4. 在 `assets/js/custom.js` 中复用 FixIt 注入的 `echarts` 核心与 theme-switch / resize 生命周期，并在允许运行的页面动态插入地球 DOM
+5. 将 `echarts-gl` 与底图纹理放入项目 `assets/`，禁止依赖远程纹理 URL
+
 ---
 
 ## 3. 同名模板覆盖实操规范
@@ -112,9 +144,7 @@ layouts/_partials/custom/revolvermaps.html  →  配置值: "custom/revolvermaps
 
 ### 3.2 当前覆盖文件
 
-| 项目文件 | 主题源文件 | 修改内容 |
-|----------|-----------|----------|
-| `layouts/_partials/footer.html` | `themes/FixIt/layouts/_partials/footer.html` | 在 `footer-container` 闭合前注入 ECharts 3D 地球组件 |
+当前项目**无**主题模板覆盖文件。新增页脚组件时已回归 `customPartials.footer`，避免 fork 整个 `footer.html`。
 
 ### 3.3 维护风险
 

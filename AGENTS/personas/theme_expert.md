@@ -54,12 +54,15 @@ Theme Expert 执行任何操作时，**必须严格遵循** `AGENTS/workflows/ma
 | S-03 | 暗色模式适配使用 `[data-theme='dark'] &` 嵌套选择器 | 遵循项目现有模式 |
 | S-04 | 文章级样式限定在 `.single .content` 选择器内 | 避免影响非文章页面 |
 | S-05 | 模板覆盖文件放置在项目根目录 `layouts/` 下 | Hugo 自动优先加载 |
-| S-06 | 向页脚/页头等区域注入组件时优先尝试 `customPartials` 机制，不满足时降级为同名模板覆盖 | `customPartials` 依赖主题钩子，可能不生效（踩坑记录 2026-04-20） |
+| S-06 | 向页脚/页头等区域注入组件时优先尝试 `customPartials` 机制，不满足时再降级为同名模板覆盖 | FixIt footer 已暴露 `custom-footer` block，优先避免 fork 全量模板（纠偏记录 2026-04-20） |
 | S-07 | 修改 hugo.toml 前必须检查文件是否包含 UTF-8 BOM | BOM 会导致 Hugo 解析失败（踩坑记录 2026-04-20） |
 | S-08 | 使用第三方外部 JS 服务时必须先验证服务 ID 有效性，不得使用占位值 | 占位 ID 导致组件不渲染（踩坑记录 2026-04-20） |
 | S-09 | 模板覆盖文件需完整复制主题源码再修改，主题升级后必须手动同步 | 覆盖文件不会随子模块更新（踩坑记录 2026-04-20） |
-| S-10 | 禁止依赖特定外网通信的第三方追踪脚本，优先选用国内可达 CDN（如 jsDelivr） | RevolverMaps 国内加载阻塞（踩坑记录 2026-04-20） |
+| S-10 | 禁止依赖特定外网通信的第三方追踪脚本，优先将运行库和纹理资源固化到项目 `assets/` | 远程脚本与纹理链接都可能失效（踩坑记录 2026-04-20） |
 | S-11 | ECharts 组件必须设置透明背景（`backgroundColor: 'transparent'`）以兼容主题暗色/亮色模式 | 不透明背景在暗色模式下产生白色块（踩坑记录 2026-04-20） |
+| S-12 | FixIt 原生 `initEcharts()` 固定使用 `renderer: 'svg'`；涉及 `echarts-gl` / WebGL 时必须在项目 `assets/js/custom.js` 中单独初始化并挂接 `switchThemeEventSet` / `resizeEventSet` | SVG renderer 无法驱动 globe（纠偏记录 2026-04-20） |
+| S-13 | `custom-assets` 位于 `theme.js` 之后，不适合加载“必须先于主题初始化存在”的库 | 资源顺序判断错误会导致生命周期接入失败（纠偏记录 2026-04-20） |
+| S-14 | FixIt 的 `custom-footer` 运行在 `partialCached "footer.html"` 路径下；页脚 partial 内禁止放页面级分支和 `.Store.Set` | footer 可扩展，但不是页面级状态注入点（纠偏记录 2026-04-20） |
 
 ## 能力要求
 
