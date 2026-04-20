@@ -1,4 +1,4 @@
-﻿# AGENTS/knowledge/dev_log.md
+﻿﻿﻿# AGENTS/knowledge/dev_log.md
 <!-- File: AGENTS/knowledge/dev_log.md -->
 
 # 长期记忆与决策库
@@ -104,3 +104,19 @@
 - **踩坑点**：此前问题根因不是 `customPartials.footer` 缺少主题钩子；FixIt 的 `custom-footer` block 实际可用。真正的问题是远程 `world.jpg` 失效、远程 `echarts-gl` 不稳定，以及 FixIt 原生 `initEcharts()` 固定使用 `renderer: 'svg'`，无法直接承载 `echarts-gl` 的 WebGL globe
 - **解决方案**：删除 `layouts/_partials/footer.html` 覆盖文件，恢复 `params.customPartials.head` + `params.customPartials.footer`；在 `footer-globe-head.html` 中做页面级 `hasEcharts` 开关，在 `footer-globe.html` 中仅输出稳定的资源配置节点；在 `assets/js/custom.js` 中以 `renderer: 'canvas'` 动态插入并初始化 footer globe，并接入 FixIt 的 theme-switch / resize 事件；将 `echarts-gl` 和 `world.jpg` 固化到项目 `assets/`
 - **对 Agent 的强制约束**：`customPartials.footer` 可作为页脚组件的主路径，不得因第三方资源失效误判为主题钩子失效；但由于 FixIt footer 运行在 `partialCached` 路径下，页面级分支和 `.Store.Set` 必须放在 `customPartials.head` 或 `assets/js/custom.js` 中；涉及 `echarts-gl` / WebGL 的场景，必须走项目侧 `assets/js/custom.js` 挂接 FixIt 生命周期，不得复用 FixIt 默认的 SVG ECharts 初始化路径；地球纹理和运行库优先固化到仓库本地资源，禁止依赖远程纹理 URL
+
+### [2026-04-20] 启用 Giscus 评论系统
+
+- **事件类型**：功能添加
+- **触发原因**：为博客文章页面添加评论互动能力
+- **踩坑点**：选择评论系统时需重点评估国内网络连通性（S-10 约束）；Giscus 脚本从 `giscus.app` 加载，国内偶有波动但对 AI/ML 技术受众无障碍；Waline 虽国内可达性更优，但需独立维护数据库，与当前零后端架构不匹配
+- **解决方案**：在 `hugo.toml` 中启用 FixIt 原生 `params.page.comment.giscus` 配置，选择 Giscus（基于 GitHub Discussions），零后端运维，FixIt 原生支持暗色/亮色主题切换
+- **对 Agent 的强制约束**：评论系统配置仅修改 `hugo.toml`，不得覆写 `layouts` 模板；Giscus 的 `repoId` 和 `categoryId` 为敏感配置，不得以占位符形式 push 到远程仓库；`mapping` 值一旦确定不得随意更改，否则会导致已有评论与文章脱钩
+
+### [2026-04-20] 完善 Giscus 评论系统：填入真实 repoId 和 categoryId
+
+- **事件类型**：配置完善
+- **触发原因**：用户从 giscus.app 获取了真实的 `repoId`（`R_kgDORC3Ygw`）和 `categoryId`（`DIC_kwDORC3Yg84C7PuG`），替换 hugo.toml 中的占位符
+- **踩坑点**：无
+- **解决方案**：将 `hugo.toml` 中 `<YOUR_REPO_ID>` 替换为 `R_kgDORC3Ygw`，`<YOUR_CATEGORY_ID>` 替换为 `DIC_kwDORC3Yg84C7PuG`，构建验证通过
+- **对 Agent 的强制约束**：无新增约束

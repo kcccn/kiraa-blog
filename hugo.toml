@@ -30,6 +30,27 @@ summaryLength = 200
     head = ["custom/footer-globe-head.html"]
     footer = ["custom/footer-globe.html"]
 
+  [params.page.comment]
+    enable = true
+
+    [params.page.comment.giscus]
+      enable = true
+      repo = "kcccn/kiraa-blog"
+      repoId = "R_kgDORC3Ygw"
+      category = "Announcements"
+      categoryId = "DIC_kwDORC3Yg84C7PuG"
+      mapping = "pathname"
+      origin = "https://giscus.app"
+      strict = "0"
+      term = ""
+      reactionsEnabled = "1"
+      emitMetadata = "0"
+      inputPosition = "bottom"
+      lang = "zh-CN"
+      lightTheme = "light"
+      darkTheme = "dark"
+      lazyLoad = true
+
 [markup]
   _merge = "shallow"
   [markup.highlight]

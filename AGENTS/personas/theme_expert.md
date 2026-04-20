@@ -1,4 +1,4 @@
-﻿# AGENTS/personas/theme_expert.md
+﻿﻿# AGENTS/personas/theme_expert.md
 <!-- File: AGENTS/personas/theme_expert.md -->
 
 # 角色定义：主题维护专家（Theme Expert）
@@ -63,6 +63,8 @@ Theme Expert 执行任何操作时，**必须严格遵循** `AGENTS/workflows/ma
 | S-12 | FixIt 原生 `initEcharts()` 固定使用 `renderer: 'svg'`；涉及 `echarts-gl` / WebGL 时必须在项目 `assets/js/custom.js` 中单独初始化并挂接 `switchThemeEventSet` / `resizeEventSet` | SVG renderer 无法驱动 globe（纠偏记录 2026-04-20） |
 | S-13 | `custom-assets` 位于 `theme.js` 之后，不适合加载“必须先于主题初始化存在”的库 | 资源顺序判断错误会导致生命周期接入失败（纠偏记录 2026-04-20） |
 | S-14 | FixIt 的 `custom-footer` 运行在 `partialCached "footer.html"` 路径下；页脚 partial 内禁止放页面级分支和 `.Store.Set` | footer 可扩展，但不是页面级状态注入点（纠偏记录 2026-04-20） |
+| S-15 | 评论系统等 FixIt 原生支持的功能，仅修改 `hugo.toml` 配置即可，不得覆写 `layouts` 模板 | Giscus 等评论系统由 FixIt `comment.html` 原生渲染（踩坑记录 2026-04-20） |
+| S-16 | Giscus 的 `repoId`/`categoryId` 为敏感配置，不得以占位符形式 push 到远程仓库；`mapping` 值一旦确定不得随意更改 | 占位符泄露或 mapping 变更会导致评论脱钩（踩坑记录 2026-04-20） |
 
 ## 能力要求
 

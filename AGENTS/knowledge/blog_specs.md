@@ -1,4 +1,4 @@
-﻿# AGENTS/knowledge/blog_specs.md
+﻿﻿﻿# AGENTS/knowledge/blog_specs.md
 <!-- File: AGENTS/knowledge/blog_specs.md -->
 
 # Kiraa-Blog 项目规约
@@ -152,9 +152,35 @@ assets/ 本地资源提供 JS / 图片
 
 ---
 
-## 4. Page Bundle 文章组织规范
+## 4. 评论系统配置规范
 
-### 4.1 目录结构
+### 4.1 当前方案：Giscus（基于 GitHub Discussions）
+
+| 配置项 | 值 | 说明 |
+|--------|-----|------|
+| 系统 | Giscus | 零后端运维，数据存储在 GitHub Discussions |
+| 配置路径 | `params.page.comment.giscus` | FixIt 原生支持，仅修改 `hugo.toml` |
+| `mapping` | `pathname` | 以文章路径作为 Discussion 唯一标识 |
+| `lang` | `zh-CN` | 中文界面 |
+| 暗色/亮色切换 | FixIt 原生 `preferred_color_scheme` | 自动跟随主题切换 |
+
+### 4.2 选型决策记录
+
+- **Giscus vs Waline**：Giscus 零后端运维，与当前无后端 Vercel 部署架构完美契合；Waline 需独立维护数据库，维护成本更高
+- **国内可达性**：Giscus 脚本从 `giscus.app` 加载，国内偶有波动，但 AI/ML 技术受众几乎 100% 有 GitHub 账号且网络环境可访问
+- **受众匹配**：AI/ML 开发者 GitHub 登录零摩擦
+
+### 4.3 维护约束
+
+- `repoId` 和 `categoryId` 为敏感配置，不得以占位符形式 push 到远程仓库
+- `mapping` 值一旦确定不得随意更改，否则会导致已有评论与文章脱钩
+- 评论系统配置仅修改 `hugo.toml`，不得覆写 `layouts` 模板
+
+---
+
+## 5. Page Bundle 文章组织规范
+
+### 5.1 目录结构
 
 所有文章位于 `content/post/` 目录下，采用 **Page Bundle** 形式组织：
 
@@ -168,7 +194,7 @@ content/post/<article-name>/
 
 **核心规则**：`index.md` 与 `img/` 目录必须同级，构成一个完整的 Page Bundle。图片资源放在 `img/` 子目录中，通过相对路径引用。
 
-### 4.2 Front Matter 必需字段
+### 5.2 Front Matter 必需字段
 
 ```yaml
 ---
@@ -181,7 +207,7 @@ featuredImage: "img/cover.jpg" # 可选，封面图相对路径
 ---
 ```
 
-### 4.3 图片引用规则
+### 5.3 图片引用规则
 
 | 引用方式 | 语法 | 说明 |
 |----------|------|------|
@@ -189,7 +215,7 @@ featuredImage: "img/cover.jpg" # 可选，封面图相对路径
 | 封面图 | `featuredImage: "img/cover.jpg"` | 相对于 Page Bundle 根目录 |
 | 外部图片 | `<figure>` HTML 标签 | 需 `markup.goldmark.renderer.unsafe = true` |
 
-### 4.4 命名规范
+### 5.4 命名规范
 
 - 文章目录名：`learning-<topic>` 或 `<descriptive-name>`，小写字母 + 连字符
 - 图片文件名：小写字母、数字、连字符，禁止空格和特殊字符
