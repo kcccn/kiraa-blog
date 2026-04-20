@@ -216,18 +216,10 @@
 
     for (var i = 0; i < allData.length; i++) {
       var item = allData[i];
-      var w = item[4] || 1;
-      var size = Math.max(4, Math.min(w * 2, 20));
-      var entry = [item[0], item[1], 0, size];
-
       if (item[3] === 1) {
-        var proxyAlpha = Math.min(0.3 + w * 0.05, 0.6);
-        entry.push('rgba(255,51,102,' + proxyAlpha.toFixed(2) + ')');
-        proxyNodes.push(entry);
+        proxyNodes.push([item[0], item[1], 0]);
       } else {
-        var realAlpha = Math.min(0.5 + w * 0.1, 1);
-        entry.push('rgba(0,255,136,' + realAlpha.toFixed(2) + ')');
-        realUsers.push(entry);
+        realUsers.push([item[0], item[1], 0]);
       }
     }
 
@@ -269,10 +261,11 @@
           type: 'scatter3D',
           coordinateSystem: 'globe',
           blendMode: 'lighter',
-          symbolSize: function (val) { return val[3]; },
+          symbolSize: 4,
           data: realUsers,
           itemStyle: {
-            color: function (val) { return val[4]; },
+            color: '#00ff88',
+            opacity: 0.8,
           },
           label: {
             show: false,
@@ -282,10 +275,11 @@
           type: 'scatter3D',
           coordinateSystem: 'globe',
           blendMode: 'lighter',
-          symbolSize: function (val) { return val[3]; },
+          symbolSize: 3,
           data: proxyNodes,
           itemStyle: {
-            color: function (val) { return val[4]; },
+            color: '#ff3366',
+            opacity: 0.4,
           },
           label: {
             show: false,

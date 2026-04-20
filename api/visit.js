@@ -6,7 +6,7 @@ const API_TIMEOUT_MS = 1500;
 const HEAT_DAYS = 30;
 const CIRCUIT_BREAKER_KEY = 'geo:circuit_breaker';
 const CIRCUIT_BREAKER_TTL = 60;
-const MIGRATION_KEY = 'kiraa:visit:migrated_v8';
+const MIGRATION_KEY = 'kiraa:visit:migrated_v9';
 
 const CARRIER_KEYWORDS = [
   'china mobile', 'china unicom', 'china telecom',
@@ -264,7 +264,7 @@ async function migrateOldFormat(redis) {
   try {
     const migrated = await redis.get(MIGRATION_KEY);
     if (migrated) return;
-    const oldKeys = ['kiraa:visit:coords', 'kiraa:visit:migrated_v3', 'kiraa:visit:migrated_v4', 'kiraa:visit:migrated_v7'];
+    const oldKeys = ['kiraa:visit:coords', 'kiraa:visit:migrated_v3', 'kiraa:visit:migrated_v4', 'kiraa:visit:migrated_v7', 'kiraa:visit:migrated_v8'];
     await redis.del(...oldKeys);
     const now = new Date();
     const delKeys = [];
@@ -276,9 +276,9 @@ async function migrateOldFormat(redis) {
     }
     await redis.del(...delKeys);
     await redis.del('geo:circuit_breaker');
-    console.log('[visit] Cleared all V7 data for v8 migration');
+    console.log('[visit] Cleared all V7/V8 data for v9 migration');
     await redis.set(MIGRATION_KEY, '1');
-    console.log('[visit] Migration v8 flag set');
+    console.log('[visit] Migration v9 flag set');
   } catch (err) {
     console.error('[visit] Migration error:', err.message);
   }
