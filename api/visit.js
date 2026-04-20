@@ -2,6 +2,14 @@ const { Redis } = require('@upstash/redis');
 
 const REDIS_KEY = 'kiraa:visit:coords';
 const MAX_COORDS = 5000;
+const ARBITRATION_DISTANCE_KM = 100;
+const API_TIMEOUT_MS = 1500;
+const CARRIER_KEYWORDS = [
+  'china mobile', 'china unicom', 'china telecom',
+  'mobile', 'unicom', 'telecom', '5g',
+  'cmcc', 'cucc', 'ctcc',
+];
+const VERCEL_GATEWAY_PREFIXES = ['35.241.', '34.120.', '34.151.'];
 
 function getRedis() {
   const url = process.env.UPSTASH_REDIS_REST_URL;
@@ -10,22 +18,6 @@ function getRedis() {
     return null;
   }
   return new Redis({ url, token });
-}
-
-function getClientIP(req) {
-  const cfIP = req.headers['cf-connecting-ip'];
-  if (cfIP) {
-    return cfIP.trim();
-  }
-  const realIP = req.headers['x-real-ip'];
-  if (realIP) {
-    return realIP.trim();
-  }
-  const forwarded = req.headers['x-forwarded-for'];
-  if (forwarded) {
-    return forwarded.split(',')[0].trim();
-  }
-  return req.socket?.remoteAddress || '127.0.0.1';
 }
 
 function isPrivateIP(ip) {
@@ -41,6 +33,49 @@ function isPrivateIP(ip) {
   return false;
 }
 
+function isVercelGateway(ip) {
+  return VERCEL_GATEWAY_PREFIXES.some(p => ip.startsWith(p));
+}
+
+function getClientIP(req) {
+  const candidates = [
+    req.headers['cf-connecting-ip'],
+    req.headers['x-real-ip'],
+    req.headers['x-forwarded-for']?.split(',')[0],
+    req.socket?.remoteAddress,
+  ];
+  for (const raw of candidates) {
+    if (!raw) continue;
+    const ip = raw.trim();
+    if (!ip || isPrivateIP(ip) || isVercelGateway(ip)) continue;
+    return ip;
+  }
+  return '127.0.0.1';
+}
+
+function withTimeout(promise, ms) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), ms)),
+  ]);
+}
+
+function haversineKm(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function isCarrierIP(asField) {
+  if (!asField) return false;
+  const lower = asField.toLowerCase();
+  return CARRIER_KEYWORDS.some(kw => lower.includes(kw));
+}
+
 function geoLocateFromCFHeader(req) {
   const cfLat = req.headers['cf-iplatitude'];
   const cfLon = req.headers['cf-iplongitude'];
@@ -48,7 +83,7 @@ function geoLocateFromCFHeader(req) {
     const lat = parseFloat(cfLat);
     const lon = parseFloat(cfLon);
     if (!isNaN(lat) && !isNaN(lon)) {
-      return { lat, lon };
+      return { lat, lon, as: null, city: null };
     }
   }
   return null;
@@ -67,82 +102,107 @@ function geoLocateFromVercelHeader(req) {
   return null;
 }
 
+async function geoLocateFromIPAPIFull(ip) {
+  try {
+    const res = await fetch(`http://ip-api.com/json/${ip}?fields=status,lat,lon,city,as`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data.status !== 'success' || data.lat == null || data.lon == null) return null;
+    return { lat: data.lat, lon: data.lon, as: data.as || '', city: data.city || '' };
+  } catch {
+    return null;
+  }
+}
+
 async function geoLocateFromIPAPICo(ip) {
   try {
     const res = await fetch(`https://ipapi.co/${ip}/json/`);
     if (!res.ok) return null;
     const data = await res.json();
-    if (data.error || data.latitude == null || data.longitude == null) {
-      return null;
-    }
-    return { lat: data.latitude, lon: data.longitude };
+    if (data.error || data.latitude == null || data.longitude == null) return null;
+    return { lat: data.latitude, lon: data.longitude, as: data.org || '', city: data.city || '' };
   } catch {
     return null;
   }
 }
 
-async function geoLocateFromIPAPI(ip) {
-  try {
-    const res = await fetch(`http://ip-api.com/json/${ip}?fields=status,lat,lon`);
-    if (!res.ok) return null;
-    const data = await res.json();
-    if (data.status !== 'success' || data.lat == null || data.lon == null) {
-      return null;
+function arbitrate(sources, req) {
+  if (sources.length === 0) {
+    const hasCFProxy = !!req.headers['cf-connecting-ip'];
+    if (!hasCFProxy) {
+      const vercelResult = geoLocateFromVercelHeader(req);
+      if (vercelResult) {
+        console.log('[visit] Arbitrated: Vercel Header (no other source)');
+        return vercelResult;
+      }
     }
-    return { lat: data.lat, lon: data.lon };
-  } catch {
+    console.log('[visit] Arbitrated: no result');
     return null;
   }
+
+  if (sources.length === 1) {
+    console.log('[visit] Arbitrated: single source', sources[0].source);
+    return { lat: sources[0].lat, lon: sources[0].lon };
+  }
+
+  const cfSource = sources.find(s => s.source === 'CF');
+  const apiSource = sources.find(s => s.source === 'ip-api');
+
+  if (cfSource && apiSource) {
+    const dist = haversineKm(cfSource.lat, cfSource.lon, apiSource.lat, apiSource.lon);
+    if (dist > ARBITRATION_DISTANCE_KM && isCarrierIP(apiSource.as)) {
+      console.log('[visit] Arbitrated: ip-api wins (CF drift', dist.toFixed(0), 'km, carrier:', apiSource.as, ')');
+      return { lat: apiSource.lat, lon: apiSource.lon };
+    }
+    console.log('[visit] Arbitrated: CF wins (dist', dist.toFixed(0), 'km, no carrier override)');
+    return { lat: cfSource.lat, lon: cfSource.lon };
+  }
+
+  const best = sources[0];
+  console.log('[visit] Arbitrated: fallback to', best.source);
+  return { lat: best.lat, lon: best.lon };
 }
 
 async function geoLocate(req, ip) {
+  const sources = [];
+
   const cfResult = geoLocateFromCFHeader(req);
   if (cfResult) {
-    console.log('[visit] Geolocated via CF Header:', ip, '→', cfResult.lat, cfResult.lon);
-    return cfResult;
+    sources.push({ source: 'CF', ...cfResult });
   }
 
-  const hasCFProxy = !!req.headers['cf-connecting-ip'];
-  if (!hasCFProxy) {
-    const vercelResult = geoLocateFromVercelHeader(req);
-    if (vercelResult) {
-      console.log('[visit] Geolocated via Vercel Header (no CF proxy):', ip, '→', vercelResult.lat, vercelResult.lon);
-      return vercelResult;
+  if (!isPrivateIP(ip)) {
+    const [bResult, cResult] = await Promise.allSettled([
+      withTimeout(geoLocateFromIPAPIFull(ip), API_TIMEOUT_MS),
+      withTimeout(geoLocateFromIPAPICo(ip), API_TIMEOUT_MS),
+    ]);
+
+    if (bResult.status === 'fulfilled' && bResult.value) {
+      sources.push({ source: 'ip-api', ...bResult.value });
+    }
+    if (cResult.status === 'fulfilled' && cResult.value) {
+      sources.push({ source: 'ipapi.co', ...cResult.value });
     }
   }
 
-  if (isPrivateIP(ip)) {
-    console.log('[visit] Private IP skipped:', ip);
-    return null;
-  }
-
-  const result = await geoLocateFromIPAPICo(ip);
-  if (result) {
-    console.log('[visit] Geolocated via ipapi.co:', ip, '→', result.lat, result.lon);
-    return result;
-  }
-
-  const fallback = await geoLocateFromIPAPI(ip);
-  if (fallback) {
-    console.log('[visit] Geolocated via ip-api.com:', ip, '→', fallback.lat, fallback.lon);
-    return fallback;
-  }
-
-  console.log('[visit] Geolocation failed for IP:', ip);
-  return null;
+  return arbitrate(sources, req);
 }
+
+const MIGRATION_KEY = 'kiraa:visit:migrated_v3';
 
 async function migrateOldFormat(redis) {
   try {
-    const sample = await redis.srandmember(REDIS_KEY);
-    if (!sample) return;
-    const parts = String(sample).split(',');
-    if (parts.length === 2 || (parts.length === 3 && /^\d+$/.test(parts[2]))) {
-      console.log('[visit] Clearing old format data, sample:', String(sample));
+    const migrated = await redis.get(MIGRATION_KEY);
+    if (migrated) return;
+    const exists = await redis.exists(REDIS_KEY);
+    if (exists) {
+      console.log('[visit] One-time force clearing old data...');
       await redis.del(REDIS_KEY);
     }
+    await redis.set(MIGRATION_KEY, '1');
+    console.log('[visit] Migration flag set, will not clear again.');
   } catch (err) {
-    console.error('[visit] Migration check error:', err.message);
+    console.error('[visit] Migration error:', err.message);
   }
 }
 
@@ -173,10 +233,12 @@ async function getAllCoords(redis) {
     return members
       .map((m) => {
         const parts = String(m).split(',');
+        if (parts.length < 2) return null;
         const lon = parseFloat(parts[0]);
         const lat = parseFloat(parts[1]);
         const day = parts[2] || '';
         if (isNaN(lon) || isNaN(lat)) return null;
+        if (Math.abs(lon) > 180 || Math.abs(lat) > 90) return null;
         return [lon, lat, day];
       })
       .filter(Boolean);

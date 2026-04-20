@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# AGENTS/knowledge/dev_log.md
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# AGENTS/knowledge/dev_log.md
 <!-- File: AGENTS/knowledge/dev_log.md -->
 
 # 长期记忆与决策库
@@ -176,3 +176,11 @@
 - **踩坑点**：CF → Vercel 双重代理下 `x-vercel-ip-*` 返回 Vercel 入口机房坐标（如 Washington DC）；CF Managed Transforms 提供 `cf-iplatitude`/`cf-iplongitude` 标头，直接反映用户真实位置；Vercel Header 仅在无 CF 代理时可信，需通过 `cf-connecting-ip` 存在性判断
 - **解决方案**：坐标获取优先级改为 `cf-iplatitude/longitude` > `x-vercel-ip-*`（仅无 CF 代理时） > `ipapi.co` > `ip-api.com`；新增 `geoLocateFromCFHeader()` 读取 CF 标头；`geoLocate()` 中通过 `cf-connecting-ip` 存在性条件化使用 Vercel Header
 - **对 Agent 的强制约束**：坐标获取必须优先校验 `cf-iplatitude`/`cf-iplongitude`（CF Managed Transforms）；Vercel Header 仅在无 `cf-connecting-ip` 时使用，双重代理下会返回机房坐标
+
+### [2026-04-20] 全域高精度地理仲裁引擎：多源并行仲裁 + IP 深度清洗 + 5G 纠偏
+
+- **事件类型**：架构重构
+- **触发原因**：5G 异地出口导致 CF Header 返回大区出口坐标（如上海）而非物理位置（如合肥）；代理 IP 识别错误；ipapi.co 被 CF 安全验证拦截；顺序降级延迟过高
+- **踩坑点**：5G 运营商出口 IP 的 CF 定位偏移可达数百公里；`ip-api.com` 的 `as` 字段包含运营商信息（如 China Mobile），可用于纠偏；顺序降级最坏情况需等待 3 个 API 超时（4.5s）；Vercel 内部网关 IP（35.241.x 等）不应作为访客 IP
+- **解决方案**：`getClientIP()` 改为候选列表遍历 + 私有 IP/网关 IP 过滤；`geoLocate()` 改为 `Promise.allSettled` 并行请求 CF Header + ip-api.com + ipapi.co（1.5s 超时）；`arbitrate()` 仲裁算法：CF vs ip-api.com 距离 >100km 且 ip-api 返回运营商信息时强制采用 ip-api 结果；`haversineKm()` 球面距离计算；`isCarrierIP()` 运营商关键词匹配；`migrateOldFormat()` 强制清空旧数据；`getAllCoords()` 增加非法坐标过滤（经度 >180、纬度 >90）
+- **对 Agent 的强制约束**：地理定位必须使用多源并行仲裁（`Promise.allSettled`），禁止顺序降级；`ip-api.com` 必须获取 `as` 字段用于运营商纠偏；IP 获取必须过滤 Vercel 内部网关 IP；部署后需将 `migrateOldFormat()` 恢复为仅格式检测（当前为强制清空）

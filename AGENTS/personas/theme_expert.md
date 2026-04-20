@@ -79,6 +79,8 @@ Theme Expert 执行任何操作时，**必须严格遵循** `AGENTS/workflows/ma
 | S-28 | 地理编码服务必须优先使用支持 HTTPS 的 API，HTTP-only 服务仅作降级备用 | `ip-api.com` 免费版仅 HTTP，HTTPS 环境下可能被安全策略阻止（踩坑记录 2026-04-20） |
 | S-29 | 坐标获取必须优先校验 `cf-iplatitude`/`cf-iplongitude`（CF Managed Transforms），`x-vercel-ip-*` 仅在无 `cf-connecting-ip` 时使用 | 双重代理下 Vercel Header 返回机房坐标而非用户位置（踩坑记录 2026-04-20） |
 | S-30 | 坐标精度必须为三位小数（`toFixed(3)`），Set 成员必须追加日期后缀（`YYYY-MM-DD`） | 两位小数精度不足，无日期后缀无法实现同坐标多天叠加发光（踩坑记录 2026-04-20） |
+| S-31 | 地理定位必须使用多源并行仲裁（`Promise.allSettled`），禁止顺序降级 | 顺序降级最坏情况需等待 3 个 API 超时（4.5s），并行可将延迟压缩至 1.5s（踩坑记录 2026-04-20） |
+| S-32 | `ip-api.com` 必须获取 `as` 字段用于运营商纠偏；IP 获取必须过滤 Vercel 内部网关 IP | 5G 运营商出口 IP 的 CF 定位偏移可达数百公里，`as` 字段可识别运营商并纠偏（踩坑记录 2026-04-20） |
 
 ## 能力要求
 
