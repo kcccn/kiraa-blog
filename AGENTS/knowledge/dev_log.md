@@ -1,4 +1,4 @@
-﻿﻿﻿# AGENTS/knowledge/dev_log.md
+﻿﻿﻿﻿# AGENTS/knowledge/dev_log.md
 <!-- File: AGENTS/knowledge/dev_log.md -->
 
 # 长期记忆与决策库
@@ -136,3 +136,11 @@
 - **踩坑点**：`map3D` 不支持叠加 `scatter3D`，必须使用 `globe` 组件；`blendMode: 'lighter'` 是实现加色混合发光的关键配置，重叠点亮度指数级增加；前端 API 调用失败时必须降级到本地模拟数据以保证美观
 - **解决方案**：在 `assets/js/custom.js` 中重构 `buildOption()`，添加 `scatter3D` 系列（`blendMode: 'lighter'`、`symbolSize: 3`、颜色 `#42b883`）；新增 `fetchVisitCoords()` 对接 `/api/visit`；新增 `FALLBACK_COORDS`（15 个全球区域 ~258 个模拟坐标）作为降级数据；设置 `environment: 'transparent'` 和 `zoomSensitivity: 0`
 - **对 Agent 的强制约束**：`scatter3D` 必须配合 `globe` 组件使用，不可用于 `map3D`；外部 API 调用必须提供降级数据，不得因后端不可用导致地球空白；`blendMode: 'lighter'` 为发光效果核心配置，不得移除
+
+### [2026-04-20] 修复 3D 地球 4 个致命 Bug：黑框、写实贴图、散点乱飞、API 确认
+
+- **事件类型**：Bug 修复
+- **触发原因**：地球出现黑色背景框、仍为写实卫星图风格、散点脱离地球表面乱飞
+- **踩坑点**：`environment: 'transparent'` 在 ECharts-GL 中不等于无背景，WebGL canvas 仍保留黑色底色，必须设为 `''`（空字符串）彻底禁用星空；`shading: 'lambert'` 产生真实光影不适合赛博风格，必须切换为 `shading: 'color'`；scatter3D 数据格式 `[lon, lat, value]` 中第三个参数被解释为海拔高度，`1` 表示地球半径的 1 倍导致点飞出表面，必须为 `0`；`api/visit.js` 已包含完整后端逻辑无需重写
+- **解决方案**：`environment: 'transparent'` → `environment: ''`；`baseTexture` 从本地 `world.jpg` 切换为 ECharts 官方深色灰度地图 CDN（bathymetry_bw_composite_4k.jpg）；`shading: 'lambert'` → `shading: 'color'`；所有散点数据第三维从 `1` 改为 `0`；降低光照强度（main: 0.6, ambient: 0.15）让地球更暗突出大气层发光
+- **对 Agent 的强制约束**：ECharts-GL `globe.environment` 必须设为 `''`（空字符串）而非 `'transparent'` 以消除黑框；scatter3D 数据第三维（海拔）必须为 `0`，非零值会导致点脱离地球表面；赛博风格地球必须使用 `shading: 'color'` 而非 `'lambert'`

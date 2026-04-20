@@ -27,7 +27,7 @@
       for (let i = 0; i < reg.n; i++) {
         const lon = reg.lon + (Math.random() - 0.5) * reg.r * 2;
         const lat = reg.lat + (Math.random() - 0.5) * reg.r * 2;
-        pts.push([lon, lat, 1]);
+        pts.push([lon, lat, 0]);
       }
     }
     return pts;
@@ -190,29 +190,31 @@
       const data = await res.json();
       if (!Array.isArray(data.coords) || data.coords.length === 0) return null;
       return data.coords.map(function (c) {
-        return [c[0], c[1], 1];
+        return [c[0], c[1], 0];
       });
     } catch {
       return null;
     }
   }
 
-  function buildOption(baseTexture, isDark, coords) {
+  const CYBER_TEXTURE = 'https://cdn.jsdelivr.net/gh/apache/echarts-website@asf-site/examples/data-gl/asset/bathymetry_bw_composite_4k.jpg';
+
+  function buildOption(fallbackTexture, isDark, coords) {
     var scatterData = coords || FALLBACK_COORDS;
 
     return {
       backgroundColor: 'transparent',
       globe: {
-        baseTexture: baseTexture,
-        environment: 'transparent',
-        shading: 'lambert',
+        baseTexture: CYBER_TEXTURE,
+        environment: '',
+        shading: 'color',
         light: {
           main: {
-            intensity: isDark ? 0.8 : 1.0,
+            intensity: 0.6,
             shadow: false,
           },
           ambient: {
-            intensity: isDark ? 0.2 : 0.3,
+            intensity: 0.15,
           },
         },
         atmosphere: {

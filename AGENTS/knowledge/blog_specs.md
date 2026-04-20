@@ -137,11 +137,14 @@ assets/ 本地资源提供 JS / 图片
 | 配置项 | 值 | 说明 |
 |--------|-----|------|
 | 渲染组件 | `globe` | `map3D` 不支持叠加 `scatter3D` |
-| 背景透明 | `backgroundColor: 'transparent'` + `environment: 'transparent'` | 兼容亮色/暗色模式 |
+| 背景透明 | `backgroundColor: 'transparent'` + `environment: ''` | `''` 彻底禁用星空黑框，`'transparent'` 无效 |
+| 贴图 | `bathymetry_bw_composite_4k.jpg`（CDN） | 深色灰度地图，赛博风格 |
+| 材质 | `shading: 'color'` | 无光影，纯色暗化，配合发光大气层 |
 | 大气层颜色 | `#42b883`（Vue Green） | ADR-003 合规 |
 | 散点系列 | `scatter3D` + `blendMode: 'lighter'` | 加色混合，越密集越亮 |
 | 散点颜色 | `#42b883` | ADR-003 合规 |
 | 散点大小 | `symbolSize: 3` | 精致感 |
+| 散点海拔 | 第三维必须为 `0` | 非零值导致点脱离地球表面 |
 | 自动旋转 | `autoRotate: true` | 持续动态 |
 | 禁用缩放 | `zoomSensitivity: 0` | 防裁切 |
 | 数据源 | `/api/visit`（真实） → `FALLBACK_COORDS`（降级） | API 失败时自动降级 |
