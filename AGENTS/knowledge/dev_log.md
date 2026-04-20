@@ -120,3 +120,11 @@
 - **踩坑点**：无
 - **解决方案**：将 `hugo.toml` 中 `<YOUR_REPO_ID>` 替换为 `R_kgDORC3Ygw`，`<YOUR_CATEGORY_ID>` 替换为 `DIC_kwDORC3Yg84C7PuG`，构建验证通过
 - **对 Agent 的强制约束**：无新增约束
+
+### [2026-04-20] 新增 Vercel Serverless Function：访客位置收集 API
+
+- **事件类型**：功能添加
+- **触发原因**：为 3D 地球提供真实访客经纬度数据，替代纯前端模拟数据
+- **踩坑点**：Vercel Serverless Function 需放在 `api/` 目录下，文件名即路由路径；`@upstash/redis` 为 HTTP-based Redis 客户端，适合 Serverless 无连接池场景；`ip-api.com` 免费额度为 45 请求/分钟，对博客场景足够
+- **解决方案**：创建 `api/visit.js`，通过 `x-forwarded-for` 获取访客 IP，调用 `ip-api.com` 解析经纬度，存入 Upstash Redis Set，返回全量坐标数组；初始化 `package.json` 并安装 `@upstash/redis`；创建 `.gitignore` 排除 `node_modules/`
+- **对 Agent 的强制约束**：Vercel API 路由必须放在 `api/` 目录下；环境变量（`UPSTASH_REDIS_REST_URL`、`UPSTASH_REDIS_REST_TOKEN`）不得硬编码到代码中，必须通过 Vercel 后台配置

@@ -65,6 +65,8 @@ Theme Expert 执行任何操作时，**必须严格遵循** `AGENTS/workflows/ma
 | S-14 | FixIt 的 `custom-footer` 运行在 `partialCached "footer.html"` 路径下；页脚 partial 内禁止放页面级分支和 `.Store.Set` | footer 可扩展，但不是页面级状态注入点（纠偏记录 2026-04-20） |
 | S-15 | 评论系统等 FixIt 原生支持的功能，仅修改 `hugo.toml` 配置即可，不得覆写 `layouts` 模板 | Giscus 等评论系统由 FixIt `comment.html` 原生渲染（踩坑记录 2026-04-20） |
 | S-16 | Giscus 的 `repoId`/`categoryId` 为敏感配置，不得以占位符形式 push 到远程仓库；`mapping` 值一旦确定不得随意更改 | 占位符泄露或 mapping 变更会导致评论脱钩（踩坑记录 2026-04-20） |
+| S-17 | Vercel Serverless Function 必须放在 `api/` 目录下，文件名即路由路径 | Vercel 约定（踩坑记录 2026-04-20） |
+| S-18 | 环境变量（Redis URL/Token 等）不得硬编码到代码中，必须通过 Vercel 后台配置 | 密钥泄露风险（踩坑记录 2026-04-20） |
 
 ## 能力要求
 

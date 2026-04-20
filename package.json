@@ -1,0 +1,24 @@
+{
+  "name": "kiraa-blog",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kcccn/kiraa-blog.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/kcccn/kiraa-blog/issues"
+  },
+  "homepage": "https://github.com/kcccn/kiraa-blog#readme",
+  "dependencies": {
+    "@upstash/redis": "^1.37.0"
+  }
+}
