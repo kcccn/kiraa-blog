@@ -54,3 +54,6 @@ summaryLength = 200
 
 [taxonomies]
   _merge = "shallow"
+
+[params.customPartials]
+  footer = ["custom/revolvermaps.html"]

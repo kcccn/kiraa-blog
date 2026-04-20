@@ -84,8 +84,8 @@
 3. 确定实现路径（按 ADR-004 优先级链选择）：
    - 路径 A：CSS 变量覆盖（`:root` 块）
    - 路径 B：SCSS 选择器覆盖（`.single .content` 内）
-   - 路径 C：hugo.toml 配置调整
-   - 路径 D：项目 `layouts/` 模板覆盖
+   - 路径 C：hugo.toml 配置调整（含 `customPartials` 扩展）
+   - 路径 D：项目 `layouts/` 模板覆盖（全文件替代，最后手段）
 
 **输出**：方案文档，包含目标变量/配置项、当前值、目标值、实现路径
 

@@ -1,4 +1,4 @@
-/* assets/css/_custom.scss */
+﻿/* assets/css/_custom.scss */
 
 /* ------------------------------------------------------- */
 /* 方案：直接覆盖 CSS 变量 (推荐，兼容性最好)            */
@@ -55,4 +55,11 @@
 /* 调整数学公式颜色，防止太浅 */
 .katex {
     color: inherit !important;
+}
+
+/* RevolverMaps 3D 访客地球 */
+.revolvermaps-globe {
+    display: flex;
+    justify-content: center;
+    margin: 0.5rem 0 0;
 }

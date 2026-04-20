@@ -73,4 +73,10 @@
 
 ### 日志记录
 
-（暂无记录，待后续补充）
+### [2026-04-20] 添加 RevolverMaps 3D 访客地球到全局页脚
+
+- **事件类型**：功能添加
+- **触发原因**：需要在博客中展示站点访问者地理来源
+- **踩坑点**：FixIt 主题提供了 `customPartials.footer` 扩展机制，无需覆盖整个 footer.html 模板；hugo.toml 文件存在 UTF-8 BOM 导致构建失败，需移除
+- **解决方案**：通过 `customPartials.footer` 注册自定义 partial，在 `_custom.scss` 中添加居中样式，地球颜色使用 `#42b883`（ADR-003 合规）
+- **对 Agent 的强制约束**：添加页脚/页头等组件时优先使用 `customPartials` 机制而非覆盖整个模板；修改 hugo.toml 前必须检查文件是否包含 UTF-8 BOM（`ef bb bf`），如有则必须移除

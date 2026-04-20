@@ -53,9 +53,56 @@ Hugo 在加载模板和资源时遵循**项目优先**原则：当项目根目�
 
 ---
 
-## 2. Page Bundle 文章组织规范
+## 2. FixIt customPartials 扩展机制
 
-### 2.1 目录结构
+FixIt 主题内置 `customPartials` 配置，允许在不覆盖模板文件的前提下向特定区域注入自定义 HTML 片段。
+
+### 2.1 配置方式
+
+在 `hugo.toml` 中通过 `params.customPartials` 注册自定义 partial 文件路径：
+
+```toml
+[params.customPartials]
+  footer = ["custom/revolvermaps.html"]
+```
+
+### 2.2 可用注入点
+
+| 注入点 | 配置键 | 说明 |
+|--------|--------|------|
+| `<head>` 区域 | `head` | 自定义 CSS/JS 引入 |
+| 桌面导航栏 | `menuDesktop` | 桌面端菜单扩展 |
+| 移动导航栏 | `menuMobile` | 移动端菜单扩展 |
+| 首页个人资料 | `profile` | 首页头像区域扩展 |
+| 侧边栏 | `aside` | 侧边栏组件注入 |
+| 评论区 | `comment` | 自定义评论系统 |
+| **页脚** | **footer** | **全局页脚组件注入** |
+| 小部件 | `widgets` | 自定义小部件 |
+| 底部资源 | `assets` | 页面底部 JS/CSS 注入 |
+| 文章 TOC 前 | `postTocBefore` | 文章目录前插入内容 |
+| 文章 TOC 后 | `postTocAfter` | 文章目录后插入内容 |
+| 文章正文前 | `postContentBefore` | 文章正文前插入内容 |
+| 文章正文后 | `postContentAfter` | 文章正文后插入内容 |
+| 文章页脚前 | `postFooterBefore` | 文章页脚前插入内容 |
+| 文章页脚后 | `postFooterAfter` | 文章页脚后插入内容 |
+
+### 2.3 自定义 partial 文件位置
+
+自定义 partial 文件必须放在项目 `layouts/_partials/` 目录下，配置中填写相对于 `layouts/_partials/` 的路径：
+
+```
+layouts/_partials/custom/revolvermaps.html  →  配置值: "custom/revolvermaps.html"
+```
+
+### 2.4 优先级
+
+`customPartials` 机制**优先于**模板覆盖。当只需向特定区域注入内容时，应使用 `customPartials` 而非覆盖整个模板文件，以减少对主题升级的影响。
+
+---
+
+## 3. Page Bundle 文章组织规范
+
+### 3.1 目录结构
 
 所有文章位于 `content/post/` 目录下，采用 **Page Bundle** 形式组织：
 
@@ -69,7 +116,7 @@ content/post/<article-name>/
 
 **核心规则**：`index.md` 与 `img/` 目录必须同级，构成一个完整的 Page Bundle。图片资源放在 `img/` 子目录中，通过相对路径引用。
 
-### 2.2 Front Matter 必需字段
+### 3.2 Front Matter 必需字段
 
 ```yaml
 ---
@@ -82,7 +129,7 @@ featuredImage: "img/cover.jpg" # 可选，封面图相对路径
 ---
 ```
 
-### 2.3 图片引用规则
+### 3.3 图片引用规则
 
 | 引用方式 | 语法 | 说明 |
 |----------|------|------|
@@ -90,7 +137,7 @@ featuredImage: "img/cover.jpg" # 可选，封面图相对路径
 | 封面图 | `featuredImage: "img/cover.jpg"` | 相对于 Page Bundle 根目录 |
 | 外部图片 | `<figure>` HTML 标签 | 需 `markup.goldmark.renderer.unsafe = true` |
 
-### 2.4 命名规范
+### 3.4 命名规范
 
 - 文章目录名：`learning-<topic>` 或 `<descriptive-name>`，小写字母 + 连字符
 - 图片文件名：小写字母、数字、连字符，禁止空格和特殊字符
