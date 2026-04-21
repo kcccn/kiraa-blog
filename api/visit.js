@@ -3,10 +3,10 @@ const crypto = require('crypto');
 
 const ARBITRATION_DISTANCE_KM = 100;
 const API_TIMEOUT_MS = 1500;
-const HEAT_DAYS = 30;
+const GEO_DAYS_KEY = 'geo:days';
 const CIRCUIT_BREAKER_KEY = 'geo:circuit_breaker';
 const CIRCUIT_BREAKER_TTL = 60;
-const MIGRATION_KEY = 'kiraa:visit:migrated_v9';
+const MIGRATION_KEY = 'kiraa:visit:migrated_v10';
 
 const CARRIER_KEYWORDS = [
   'china mobile', 'china unicom', 'china telecom',
@@ -264,38 +264,60 @@ async function migrateOldFormat(redis) {
   try {
     const migrated = await redis.get(MIGRATION_KEY);
     if (migrated) return;
-    const oldKeys = ['kiraa:visit:coords', 'kiraa:visit:migrated_v3', 'kiraa:visit:migrated_v4', 'kiraa:visit:migrated_v7', 'kiraa:visit:migrated_v8'];
+    const oldKeys = [
+      'kiraa:visit:coords', 'kiraa:visit:migrated_v3',
+      'kiraa:visit:migrated_v4', 'kiraa:visit:migrated_v7',
+      'kiraa:visit:migrated_v8', 'kiraa:visit:migrated_v9',
+    ];
     await redis.del(...oldKeys);
+
     const now = new Date();
-    const delKeys = [];
-    for (let i = 0; i < 60; i++) {
+    const daysToCheck = [];
+    for (let i = 0; i < 365; i++) {
       const d = new Date(now);
       d.setDate(d.getDate() - i);
-      const day = d.toISOString().split('T')[0];
-      delKeys.push(`geo:uv:${day}`, `geo:heat:${day}`);
+      daysToCheck.push(d.toISOString().split('T')[0]);
     }
-    await redis.del(...delKeys);
-    await redis.del('geo:circuit_breaker');
-    console.log('[visit] Cleared all V7/V8 data for v9 migration');
+
+    const checkPipeline = redis.pipeline();
+    for (const day of daysToCheck) {
+      checkPipeline.exists(`geo:heat:${day}`);
+    }
+    const existResults = await checkPipeline.exec();
+
+    const existingDays = [];
+    for (let i = 0; i < existResults.length; i++) {
+      if (existResults[i]) {
+        existingDays.push(daysToCheck[i]);
+      }
+    }
+
+    if (existingDays.length > 0) {
+      await redis.sadd(GEO_DAYS_KEY, ...existingDays);
+
+      const persistPipeline = redis.pipeline();
+      for (const day of existingDays) {
+        persistPipeline.persist(`geo:heat:${day}`);
+        persistPipeline.persist(`geo:uv:${day}`);
+      }
+      await persistPipeline.exec();
+      console.log('[visit] Backfilled geo:days and persisted', existingDays.length, 'dates');
+    }
+
     await redis.set(MIGRATION_KEY, '1');
-    console.log('[visit] Migration v9 flag set');
+    console.log('[visit] Migration v10 flag set (data preserved)');
   } catch (err) {
     console.error('[visit] Migration error:', err.message);
   }
 }
 
 async function getHeatmapData(redis) {
-  const now = new Date();
-  const keys = [];
-  for (let i = 0; i < HEAT_DAYS; i++) {
-    const d = new Date(now);
-    d.setDate(d.getDate() - i);
-    keys.push(`geo:heat:${d.toISOString().split('T')[0]}`);
-  }
+  const days = await redis.smembers(GEO_DAYS_KEY);
+  if (!days || days.length === 0) return [];
 
   const pipeline = redis.pipeline();
-  for (const key of keys) {
-    pipeline.hgetall(key);
+  for (const day of days) {
+    pipeline.hgetall(`geo:heat:${day}`);
   }
   const results = await pipeline.exec();
 
@@ -359,7 +381,6 @@ module.exports = async function handler(req, res) {
       const added = await redis.sadd(uvKey, fp);
       if (added === 1) {
         isNewDevice = true;
-        await redis.expire(uvKey, 7 * 86400);
       }
     }
 
@@ -375,7 +396,7 @@ module.exports = async function handler(req, res) {
         const type = computeType(geo, clientTzOffset);
         const field = `${geo.lon.toFixed(3)},${geo.lat.toFixed(3)}:${type}`;
         await redis.hincrby(heatKey, field, 1);
-        await redis.expire(heatKey, 31 * 86400);
+        await redis.sadd(GEO_DAYS_KEY, today);
         console.log('[visit] New device:', fp, '→', field, 'type:', type);
       }
     } else {

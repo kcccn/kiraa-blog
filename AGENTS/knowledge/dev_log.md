@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# AGENTS/knowledge/dev_log.md
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# AGENTS/knowledge/dev_log.md
 <!-- File: AGENTS/knowledge/dev_log.md -->
 
 # 长期记忆与决策库
@@ -208,3 +208,19 @@
 - **踩坑点**：`proxy/hosting` 字段误报率高（企业专线、CDN 节点均被标记）；云厂商 AS 关键词匹配过于宽泛（阿里云/腾讯云国内用户大量命中）
 - **解决方案**：`computeType()` 移除 `isProxy`/`hosting`/`cloudProvider` 判定，仅保留时区偏差 >30h 判定；迁移 key 升级为 `v8`，一次性清空 60 天 `geo:uv:*` + `geo:heat:*` 数据；地球容器从 250px 放大至 500px
 - **对 Agent 的强制约束**：红绿仲裁仅使用时区偏差判定，禁止引入 `proxy/hosting`/AS 关键词等其他信号
+
+### [2026-04-21] 去除 30 天数据清除机制，数据永久保留
+
+- **事件类型**：架构重构
+- **触发原因**：30 天 TTL 导致历史访客热力数据自动清除，无法展示长期访问趋势
+- **踩坑点**：原架构使用固定 30 天日期列表读取数据，移除 TTL 后需改为动态日期注册表（`geo:days` Set）才能读取全量历史数据；`geo:days` 注册表需在每次写入热力数据时同步维护，否则会出现数据存在但无法被读取的不一致问题
+- **解决方案**：移除 `geo:uv:{day}` 的 7 天 TTL 和 `geo:heat:{day}` 的 31 天 TTL；新增 `geo:days` 全局日期注册表 Set，写入热力数据时 `SADD` 当天日期；`getHeatmapData()` 从 `SMEMBERS geo:days` 动态获取全部日期替代固定 30 天窗口；迁移 key 升级为 `v10`，迁移时回填最近 365 天的 `geo:heat:*` 日期到 `geo:days` 并 `PERSIST` 移除旧 TTL，保留全部历史数据
+- **对 Agent 的强制约束**：热力数据永久保留，禁止设置 TTL；写入热力数据时必须同步注册日期到 `geo:days` Set；多日读取必须使用 `SMEMBERS geo:days` + Pipeline，禁止使用固定日期列表或 `KEYS` 命令
+
+### [2026-04-21] 地球散点重构：分桶图层叠加渲染，权重驱动半径 + 径向渐变模拟
+
+- **事件类型**：功能重构
+- **触发原因**：需要根据累计访问次数动态调整散点半径，并实现中心亮边缘暗的渐变效果
+- **踩坑点**：ECharts-GL `scatter3D` 基于 WebGL 渲染管线，不支持 `symbolSize` 和 `itemStyle.color` 的函数回调，也不支持 `RadialGradient`；必须通过预计算分桶 + 多层 series 叠加 + `blendMode: 'lighter'` 加色混合来近似实现
+- **解决方案**：将坐标数据按权重分 4 桶（S:1 / M:2-5 / L:6-15 / XL:16+），每桶拆为核心层（小尺寸高透明度）和外晕层（大尺寸低透明度），共最多 16 个 series；`blendMode: 'lighter'` 使重叠区域自然更亮，模拟径向渐变；半径保底 3px 确保单次访问可见
+- **对 Agent 的强制约束**：WebGL `scatter3D` 环境下绝对禁止使用函数回调配置 size 和 color，必须采用分桶图层生成独立 series 的静态策略；散点半径保底 `symbolSize ≥ 3`

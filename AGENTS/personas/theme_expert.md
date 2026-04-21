@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿# AGENTS/personas/theme_expert.md
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# AGENTS/personas/theme_expert.md
 <!-- File: AGENTS/personas/theme_expert.md -->
 
 # 角色定义：主题维护专家（Theme Expert）
@@ -69,7 +69,7 @@ Theme Expert 执行任何操作时，**必须严格遵循** `AGENTS/workflows/ma
 | S-18 | 环境变量（Redis URL/Token 等）不得硬编码到代码中，必须通过 Vercel 后台配置 | 密钥泄露风险（踩坑记录 2026-04-20） |
 | S-19 | `scatter3D` 必须配合 `globe` 组件使用，不可用于 `map3D` | `map3D` 不支持叠加 `scatter3D`（踩坑记录 2026-04-20） |
 | S-20 | 外部 API 调用必须提供降级数据（如 `FALLBACK_COORDS`），不得因后端不可用导致组件空白 | 地球空白比模拟数据更差（踩坑记录 2026-04-20） |
-| S-21 | `blendMode: 'lighter'` 为发光热力效果核心配置，不得移除 | 移除后散点无法实现越密集越亮效果（踩坑记录 2026-04-20） |
+| S-21 | `blendMode: 'lighter'` 为发光热力效果核心配置，不得移除；散点半径必须按权重分桶映射（S/M/L/XL），保底 `symbolSize ≥ 3`；渐变效果通过核心层 + 外晕层双层叠加实现；WebGL `scatter3D` 环境下绝对禁止使用 `symbolSize` 或 `itemStyle.color` 函数回调 | 移除后散点无法实现越密集越亮效果；WebGL 不支持回调，函数回调会导致渲染异常（踩坑记录 2026-04-20 + 2026-04-21） |
 | S-22 | ECharts-GL `globe.environment` 必须设为 `''`（空字符串）而非 `'transparent'`，后者无法消除黑框 | `'transparent'` 在 WebGL canvas 中仍保留黑色底色（踩坑记录 2026-04-20） |
 | S-23 | scatter3D 数据第三维（海拔）必须为 `0`，非零值导致点脱离地球表面 | 值 `1` 表示地球半径的 1 倍，点飞出表面（踩坑记录 2026-04-20） |
 | S-24 | 赛博风格地球必须使用 `shading: 'color'` 而非 `'lambert'`，后者产生真实光影 | `'lambert'` 不适合暗黑赛博风格（踩坑记录 2026-04-20） |
@@ -78,13 +78,13 @@ Theme Expert 执行任何操作时，**必须严格遵循** `AGENTS/workflows/ma
 | S-27 | 私有 IP 判断 `172.` 前缀必须限定 `172.16.0.0/12`（172.16-172.31），不得过滤所有 `172.*` | 过滤所有 `172.*` 会误杀公网 IP（踩坑记录 2026-04-20） |
 | S-28 | 地理编码服务必须优先使用支持 HTTPS 的 API，HTTP-only 服务仅作降级备用 | `ip-api.com` 免费版仅 HTTP，HTTPS 环境下可能被安全策略阻止（踩坑记录 2026-04-20） |
 | S-29 | 坐标获取必须优先校验 `cf-iplatitude`/`cf-iplongitude`（CF Managed Transforms），`x-vercel-ip-*` 仅在无 `cf-connecting-ip` 时使用 | 双重代理下 Vercel Header 返回机房坐标而非用户位置（踩坑记录 2026-04-20） |
-| S-30 | 坐标精度必须为三位小数（`toFixed(3)`），Set 成员必须追加日期后缀（`YYYY-MM-DD`） | 两位小数精度不足，无日期后缀无法实现同坐标多天叠加发光（踩坑记录 2026-04-20） |
+| S-30 | 坐标精度必须为三位小数（`toFixed(3)`），Set 成员必须追加日期后缀（`YYYY-MM-DD`）；热力数据永久保留，禁止设置 TTL | 两位小数精度不足，无日期后缀无法实现同坐标多天叠加发光；TTL 会导致历史数据丢失（踩坑记录 2026-04-20 + 2026-04-21） |
 | S-31 | 地理定位必须使用多源并行仲裁（`Promise.allSettled`），禁止顺序降级 | 顺序降级最坏情况需等待 3 个 API 超时（4.5s），并行可将延迟压缩至 1.5s（踩坑记录 2026-04-20） |
 | S-32 | `ip-api.com` 必须获取 `as` 字段用于运营商纠偏；IP 获取必须过滤 Vercel 内部网关 IP | 5G 运营商出口 IP 的 CF 定位偏移可达数百公里，`as` 字段可识别运营商并纠偏（踩坑记录 2026-04-20） |
 | S-33 | 红绿仲裁仅使用时区偏差 >30h 判定代理，禁止引入 `proxy/hosting`/AS 关键词等其他信号 | `proxy/hosting` 误报率高（企业专线/CDN 被标记）；云厂商 AS 关键词过于宽泛（踩坑记录 2026-04-20） |
 | S-34 | 禁止存储真实 IP，必须使用 `SHA256(IP\|UA\|Lang)[:8]` 弱指纹 | PII 隐私风险 + NAT 下多设备共享 IP 导致坐标丢失（踩坑记录 2026-04-20） |
-| S-35 | 去重与聚合必须使用双键分离（`geo:uv:{day}` Set + `geo:heat:{day}` Hash） | 单 Set 架构无法实现权重聚合，NAT 下坐标丢失（踩坑记录 2026-04-20） |
-| S-36 | 禁止使用 Redis `KEYS` 命令，必须使用固定日期列表 + Pipeline | `KEYS` 是 O(N) 阻塞扫描，生产环境严禁（踩坑记录 2026-04-20） |
+| S-35 | 去重与聚合必须使用双键分离（`geo:uv:{day}` Set + `geo:heat:{day}` Hash）；写入热力数据时必须同步注册日期到 `geo:days` Set | 单 Set 架构无法实现权重聚合，NAT 下坐标丢失；无日期注册表则无法动态读取全量历史数据（踩坑记录 2026-04-20 + 2026-04-21） |
+| S-36 | 禁止使用 Redis `KEYS` 命令，必须使用 `SMEMBERS geo:days` + Pipeline | `KEYS` 是 O(N) 阻塞扫描，生产环境严禁；固定日期列表无法覆盖全量历史数据（踩坑记录 2026-04-20 + 2026-04-21） |
 | S-37 | ip-api 429 必须触发 60s 熔断器；前端视觉属性必须预计算 | 429 限流无保护会持续失败；ECharts-GL 函数回调兼容性不稳定（踩坑记录 2026-04-20） |
 
 ## 能力要求

@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿# AGENTS/knowledge/blog_specs.md
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# AGENTS/knowledge/blog_specs.md
 <!-- File: AGENTS/knowledge/blog_specs.md -->
 
 # Kiraa-Blog 项目规约
@@ -142,8 +142,10 @@ assets/ 本地资源提供 JS / 图片
 | 材质 | `shading: 'color'` | 无光影，纯色暗化，配合发光大气层 |
 | 大气层颜色 | `#42b883`（Vue Green） | ADR-003 合规 |
 | 散点系列 | `scatter3D` + `blendMode: 'lighter'` | 加色混合，越密集越亮 |
-| 散点颜色 | `#42b883` | ADR-003 合规 |
-| 散点大小 | `symbolSize: 3` | 精致感 |
+| 散点渲染 | 分桶图层叠加（核心层 + 外晕层） | WebGL 不支持回调，必须预计算分桶生成独立 series |
+| 散点半径 | S(1): 3/6, M(2-5): 8/16, L(6-15): 14/28, XL(16+): 20/40 | 核心/外晕，保底 3px |
+| 真实用户颜色 | 核心 `rgba(0,255,136,0.8)` + 外晕 `rgba(0,255,136,0.2)` | ADR-003 合规，双层叠加模拟径向渐变 |
+| 代理节点颜色 | 核心 `rgba(255,51,102,0.5)` + 外晕 `rgba(255,51,102,0.15)` | 幽灵红半透明 |
 | 散点海拔 | 第三维必须为 `0` | 非零值导致点脱离地球表面 |
 | 自动旋转 | `autoRotate: true` | 持续动态 |
 | 禁用缩放 | `zoomSensitivity: 0` | 防裁切 |
@@ -197,23 +199,23 @@ Vercel Serverless Function 放置在项目根目录 `api/` 下，文件名即路
 
 ### 4.2 `/api/visit` 接口
 
-- **架构版本**：V7.1（弱指纹 + 双键分离聚合 + 熔断器）
+- **架构版本**：V10（弱指纹 + 双键分离聚合 + 熔断器 + 永久保留）
 - **定位架构**：多源并行仲裁引擎（`Promise.allSettled`，1.5s 超时，ip-api 2 次重试）
 - **仲裁源**：CF Header（`cf-iplatitude/longitude`） + ip-api.com（含 `as/proxy/hosting/offset` 字段） + ipapi.co（补位）
 - **仲裁算法**：CF vs ip-api.com 距离 >100km 且 ip-api 返回运营商信息时，强制采用 ip-api 结果（5G 纠偏）
 - **IP 获取**：候选列表遍历（`cf-connecting-ip` > `x-real-ip` > `x-forwarded-for` > `remoteAddress`），过滤私有 IP 和 Vercel 网关 IP
 - **弱指纹**：`SHA256(IP|User-Agent|Accept-Language)[:8]`，替代真实 IP 存储，零 PII 风险
-- **去重机制**：`geo:uv:{YYYY-MM-DD}`（Set），`SADD` 返回 1 表示新设备，TTL 7 天
-- **聚合存储**：`geo:heat:{YYYY-MM-DD}`（Hash），Field=`lon,lat:type`，Value=权重，`HINCRBY` 原子累加，TTL 31 天
+- **去重机制**：`geo:uv:{YYYY-MM-DD}`（Set），`SADD` 返回 1 表示新设备，无 TTL，永久保留
+- **聚合存储**：`geo:heat:{YYYY-MM-DD}`（Hash），Field=`lon,lat:type`，Value=权重，`HINCRBY` 原子累加，无 TTL，永久保留；写入时同步注册日期到 `geo:days`（Set）
 - **坐标精度**：三位小数（`toFixed(3)`，约 110m）
 - **类型判定**：`computeType()` 仅使用时区偏差 >30h 判定代理（IP 时区 vs 浏览器时区），不使用 `proxy/hosting`/AS 关键词
 - **熔断器**：ip-api 429 触发 `geo:circuit_breaker`（60s TTL），期间跳过定位但仍返回热力数据
-- **多日读取**：30 天固定日期列表 + Pipeline `HGETALL`，禁止使用 `KEYS` 命令
+- **多日读取**：`SMEMBERS geo:days` 获取全部日期 + Pipeline `HGETALL`，禁止使用 `KEYS` 命令
 - **前端参数**：`GET /api/visit?tzOffset={minutes}` 传递浏览器时区偏移
 - **响应格式**：`{ count: number, coords: [[lon, lat, type, weight], ...] }`
 - **前端渲染**：预计算 symbolSize + RGBA 颜色；真实用户 `rgba(0,255,136,alpha)`；代理节点 `rgba(255,51,102,alpha)`；`blendMode: 'lighter'`
 - **降级策略**：Redis 未配置返回 503；熔断器激活时跳过定位；坐标获取失败跳过存储但仍返回已有数据
-- **旧数据迁移**：`migrateOldFormat()` 一次性清除旧架构 key（`kiraa:visit:*`），迁移标记 `kiraa:visit:migrated_v7`
+- **旧数据迁移**：`migrateOldFormat()` 一次性清除旧架构 key（`kiraa:visit:*`），迁移标记 `kiraa:visit:migrated_v10`
 
 ### 4.3 环境变量
 
