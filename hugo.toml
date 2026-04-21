@@ -7,7 +7,11 @@ hasCJKLanguage = true
 summaryLength = 200
 
 [params]
-  # 开启数学公式渲染 (KaTeX)，写论文笔记必备
+  [params.author]
+    name = "kiraa"
+    avatar = "https://github.com/kcccn.png"
+    link = "https://github.com/kcccn"
+
   [params.page.math]
     enable = true
     type = "katex"
