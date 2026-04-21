@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# AGENTS/knowledge/blog_specs.md
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# AGENTS/knowledge/blog_specs.md
 <!-- File: AGENTS/knowledge/blog_specs.md -->
 
 # Kiraa-Blog 项目规约
@@ -315,6 +315,7 @@ featuredImage: "img/cover.jpg" # 可选，封面图相对路径
 
 ### 7.3 地球隔离规则
 
-- Nexus 页面：`#nexus-globe` 页面内地球，由 `initNexusGlobe()` 初始化
-- 非 Nexus 页面：footer 全局地球，由 `initFooterGlobe()` 初始化
-- `footer-globe-head.html` 排除 `/nexus/` 路径，避免双地球
+- **全局隔离**：3D 地球脚本 100% 隔离在 `/nexus/` 单页，非 Nexus 页面不加载 echarts.min.js / echarts-gl.min.js
+- `footer-globe-head.html` 和 `footer-globe.html` 已清空（仅保留注释），不得恢复
+- Nexus 页面：`#nexus-globe` 页面内地球，由 `initNexusGlobe()` 初始化，`hasEcharts` 由模板内 `.Store.Set` 触发
+- 非 Nexus 页面：无地球，无 echarts 加载，零性能开销

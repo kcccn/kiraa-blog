@@ -13,18 +13,5 @@ menu:
       icon: fa-solid fa-globe
 ---
 
-## Friendly Reminder
-
-Comment like this:
-
-```yaml
-- nickname: <your nickname>
-  avatar: <your avatar>
-  url: <your site link>
-  description: <description of your site>
-```
-
 > [!NOTE]
->
-> 1. If you want to exchange link, please leave a comment as the above format. (personal non-commercial blogs / websites only)
-> 2. Website failure, stop maintenance and improper content may be unlinked!
+> 友链申请请在评论区留言，格式：`nickname / avatar / url / description`

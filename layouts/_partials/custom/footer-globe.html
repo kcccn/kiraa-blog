@@ -1,11 +1,1 @@
-{{- $echartsGL := resources.Get "lib/echarts-gl/echarts-gl.min.js" -}}
-{{- $worldTexture := resources.Get "images/echarts/world.jpg" -}}
-{{- if and $echartsGL $worldTexture -}}
-  <script
-    id="footer-globe-config"
-    type="application/json"
-    data-echarts-gl-src="{{ $echartsGL.RelPermalink }}"
-    data-base-texture="{{ $worldTexture.RelPermalink }}"></script>
-{{- else -}}
-  {{- warnf "Footer globe resources missing: echarts-gl=%t world=%t" (ne $echartsGL nil) (ne $worldTexture nil) -}}
-{{- end -}}
+﻿{{- /* Footer globe config disabled — /nexus/ page uses inline data attributes on #nexus-globe */ -}}

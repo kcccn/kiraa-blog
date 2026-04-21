@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# AGENTS/personas/theme_expert.md
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# AGENTS/personas/theme_expert.md
 <!-- File: AGENTS/personas/theme_expert.md -->
 
 # 角色定义：主题维护专家（Theme Expert）
@@ -89,6 +89,7 @@ Theme Expert 执行任何操作时，**必须严格遵循** `AGENTS/workflows/ma
 | S-38 | Nexus 页面地球容器 `#nexus-globe` 必须在 `layouts/nexus.html` 模板内直接输出，不得通过 customPartials 注入 | FixIt `page.html` 无 `postContentBefore` block，customPartials 无法向普通 page 注入内容区组件（踩坑记录 2026-04-21） |
 | S-39 | 友链数据必须放 `data/friends.yml`，复用 `.Site.Data.friends` 路径；YAML 数据文件中的 URL 值必须用双引号包裹 | 与 FixIt 原生 friends 模板数据路径一致；不加引号会导致 Hugo YAML 解析器报错（踩坑记录 2026-04-21） |
 | S-40 | `layouts/nexus.html` 为项目新增模板（非同名覆盖），主题升级无需同步 | 与 S-09 区分：同名覆盖需手动同步，新增模板无此风险（踩坑记录 2026-04-21） |
+| S-41 | 3D 地球脚本 100% 隔离在 `/nexus/` 单页；`footer-globe-head.html` 和 `footer-globe.html` 必须保持为空（仅注释），禁止恢复全局 footer 地球 | ECharts + ECharts-GL 体积庞大，全局加载严重影响首屏性能；非 Nexus 页面不得加载 echarts（踩坑记录 2026-04-21） |
 
 ## 能力要求
 

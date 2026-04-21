@@ -16,13 +16,15 @@
       {{- end -}}
     </div>
 
-    {{- /* Earth Container */ -}}
+    {{- /* Earth Container — 100% width, 50vh height */ -}}
     <section class="nexus-globe-section">
       <div id="nexus-globe" class="echarts-globe" data-echarts-globe
         data-echarts-gl-src="{{ (resources.Get "lib/echarts-gl/echarts-gl.min.js").RelPermalink }}"
         data-base-texture="{{ (resources.Get "images/echarts/world.jpg").RelPermalink }}"
         aria-hidden="true"></div>
     </section>
+
+    <hr class="nexus-divider" />
 
     {{- /* Friends Section */ -}}
     <section class="nexus-friends-section">

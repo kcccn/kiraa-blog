@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# AGENTS/knowledge/dev_log.md
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# AGENTS/knowledge/dev_log.md
 <!-- File: AGENTS/knowledge/dev_log.md -->
 
 # 长期记忆与决策库
@@ -128,6 +128,14 @@
 - **踩坑点**：FixIt 的 `customPartials.postContentBefore` 等 block 仅在 `posts/single.html` 中存在，`page.html` 无此 block，无法通过 customPartials 向普通页面注入内容区组件；footer partial 运行在 `partialCached` 下不可做页面级分支（S-14）；因此 Nexus 页面的地球容器必须内嵌在专用模板中；`data/friends.yml` 必须用引号包裹 URL 值，否则 Hugo YAML 解析器报错 `mapping value is not allowed in this context`；Write 工具生成的文件可能带 UTF-8 BOM，必须检查并移除（S-07）
 - **解决方案**：创建 `layouts/nexus.html` 专用模板（新增文件，非同名覆盖），内嵌地球容器 `#nexus-globe`；友链数据放 `data/friends.yml` 复用 FixIt 原生 `.Site.Data.friends` 路径；在 `custom.js` 中新增 `initNexusGlobe()` 独立初始化逻辑；在 `footer-globe-head.html` 中排除 Nexus 页面避免双地球
 - **对 Agent 的强制约束**：Nexus 页面地球容器 `#nexus-globe` 必须在 `layouts/nexus.html` 模板内直接输出，不得通过 customPartials 注入（page 类型无 postContentBefore block）；Nexus 页面的 `hasEcharts` Store 在模板 `define "content"` 内设置，不依赖 footer-globe-head.html；友链数据必须放 `data/friends.yml` 以复用 `.Site.Data.friends` 路径；YAML 数据文件中的 URL 值必须用双引号包裹
+
+### [2026-04-21] 地球脚本单页化隔离：移除全局 footer 地球，echarts 仅 Nexus 页面加载
+
+- **事件类型**：架构重构
+- **触发原因**：ECharts + ECharts-GL 体积庞大，每页全局加载严重影响首屏性能（FCP）和移动端带宽；3D 地球应 100% 隔离在 `/nexus/` 单页
+- **踩坑点**：`footer-globe-head.html` 和 `footer-globe.html` 两个 customPartials 曾负责全局设置 `hasEcharts` Store 和输出 `#footer-globe-config`；清空这两个 partial 后，非 Nexus 页面不再加载 echarts.min.js（`.Store.Get "hasEcharts"` 为 false），Nexus 页面通过模板内 `.Store.Set "hasEcharts" true` 独立触发；`custom.js` 中 footer 地球代码变为死代码但不影响功能（`boot()` 检测不到 DOM 元素自动跳过）
+- **解决方案**：清空 `footer-globe-head.html`（仅保留注释）和 `footer-globe.html`（仅保留注释）；Nexus 页面的 echarts 加载完全由 `layouts/nexus.html` 模板内的 `.Store.Set "hasEcharts" true` 控制；地球容器改为 `width:100%; height:50vh` 响应式尺寸；友链 Grid 从 `minmax(160px)` 扩展为 `minmax(200px)`；头像从 64px 增大到 80px；正文精简为一行友链申请提示
+- **对 Agent 的强制约束**：3D 地球脚本 100% 隔离在 `/nexus/` 单页，禁止恢复全局 footer 地球加载；`footer-globe-head.html` 和 `footer-globe.html` 必须保持为空（仅注释），不得恢复 `hasEcharts` Store 设置或 `#footer-globe-config` 输出；非 Nexus 页面不得加载 echarts.min.js 或 echarts-gl.min.js
 
 ### [2026-04-20] 新增 Vercel Serverless Function：访客位置收集 API
 

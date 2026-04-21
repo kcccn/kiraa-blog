@@ -1,10 +1,1 @@
-﻿{{- $relPermalink := lower (.RelPermalink | default "") -}}
-{{- $isArchivesOrOffline := or
-  (and (eq .Kind "home") (in $relPermalink "/archives/"))
-  (in $relPermalink "/offline/")
--}}
-{{- $isNexus := in $relPermalink "/nexus/" -}}
-{{- if and (not $isArchivesOrOffline) (not $isNexus) -}}
-  {{- .Store.Set "hasEcharts" true -}}
-  <script>window.__kiraaFooterGlobeEnabled=true;</script>
-{{- end -}}
+﻿{{- /* Footer globe disabled globally — 3D globe is isolated to /nexus/ only */ -}}

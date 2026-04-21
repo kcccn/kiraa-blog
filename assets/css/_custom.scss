@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿/* assets/css/_custom.scss */
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿/* assets/css/_custom.scss */
 
 /* ------------------------------------------------------- */
 /* 方案：直接覆盖 CSS 变量 (推荐，兼容性最好)            */
@@ -57,18 +57,11 @@
     color: inherit !important;
 }
 
-/* ECharts 3D 地球 */
+/* ECharts 3D 地球 — Nexus page only */
 .echarts-globe-wrapper {
     display: flex;
     justify-content: center;
     margin: 0.75rem 0 0;
-}
-
-.echarts-globe {
-    width: 500px;
-    height: 500px;
-    max-width: calc(100vw - 2rem);
-    max-height: calc(100vw - 2rem);
 }
 
 .echarts-globe-wrapper[hidden] {
@@ -78,15 +71,23 @@
 /* Nexus Page */
 .nexus {
     .nexus-globe-section {
-        display: flex;
-        justify-content: center;
-        margin: 2rem 0;
+        width: 100%;
+        margin: 0 0 2rem;
 
         #nexus-globe {
-            width: 600px;
-            height: 600px;
-            max-width: calc(100vw - 2rem);
-            max-height: calc(100vw - 2rem);
+            width: 100%;
+            height: 50vh;
+            min-height: 300px;
+        }
+    }
+
+    .nexus-divider {
+        border: none;
+        border-top: 1px solid rgba(66, 184, 131, 0.2);
+        margin: 0 0 2rem;
+
+        [data-theme='dark'] & {
+            border-top-color: rgba(66, 184, 131, 0.15);
         }
     }
 
@@ -94,7 +95,7 @@
         color: #42b883;
         border-bottom: 1px solid rgba(66, 184, 131, 0.3);
         padding-bottom: 0.5rem;
-        margin: 2rem 0 1rem;
+        margin: 0 0 1.5rem;
         font-size: 1.5rem;
 
         [data-theme='dark'] & {
@@ -104,22 +105,19 @@
 
     .nexus-friend-links {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-        gap: 1rem;
-        margin-top: 1rem;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 20px;
     }
 
     .nexus-friend-card {
         display: flex;
         flex-direction: column;
         align-items: center;
-        padding: 1.25rem 0.75rem;
+        padding: 20px;
         border-radius: 12px;
-        background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        border: 1px solid rgba(66, 184, 131, 0.2);
-        box-shadow: 0 0 8px rgba(66, 184, 131, 0.1);
+        background: rgba(66, 184, 131, 0.03);
+        border: 1px solid rgba(66, 184, 131, 0.1);
+        text-align: center;
         text-decoration: none;
         transition: all 0.3s ease;
 
@@ -129,39 +127,34 @@
         }
 
         &:hover {
-            border-color: #42b883;
-            box-shadow: 0 0 16px rgba(66, 184, 131, 0.3);
-            transform: translateY(-2px);
+            border-color: rgba(66, 184, 131, 0.5);
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(66, 184, 131, 0.1);
         }
     }
 
     .nexus-friend-avatar {
-        width: 64px;
-        height: 64px;
+        width: 80px;
+        height: 80px;
         border-radius: 50%;
         object-fit: cover;
-        border: 2px solid rgba(66, 184, 131, 0.3);
-        margin-bottom: 0.75rem;
+        margin: 0 auto 15px;
+        border: 2px solid rgba(66, 184, 131, 0.2);
+
+        [data-theme='dark'] & {
+            border-color: rgba(255, 255, 255, 0.1);
+        }
     }
 
     .nexus-friend-nickname {
+        font-size: 1.1rem;
+        font-weight: bold;
         color: #42b883;
-        font-weight: 600;
-        font-size: 0.9rem;
-        max-width: 100%;
-        overflow: hidden;
-        white-space: nowrap;
-        text-overflow: ellipsis;
+        margin-bottom: 8px;
     }
 
     .nexus-friend-desc {
+        font-size: 0.85rem;
         color: var(--fixit-color-secondary, #90a4ae);
-        font-size: 0.75rem;
-        margin-top: 0.25rem;
-        max-width: 100%;
-        overflow: hidden;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-        text-align: center;
     }
 }
