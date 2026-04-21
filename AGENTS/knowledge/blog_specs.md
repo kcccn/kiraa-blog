@@ -146,7 +146,9 @@ assets/ 本地资源提供 JS / 图片
 | 散点大小 | `symbolSize: 3` | 精致感 |
 | 散点海拔 | 第三维必须为 `0` | 非零值导致点脱离地球表面 |
 | 自动旋转 | `autoRotate: true` | 持续动态 |
-| 禁用缩放 | `zoomSensitivity: 0` | 防裁切 |
+| 禁用缩放 | `zoomSensitivity: 0` | 防裁切 + 防滚动劫持 |
+| 拖拽旋转 | `rotateSensitivity: 1` | 允许左键拖拽旋转 |
+| 滚动释放 | canvas `wheel` → `stopPropagation()` | 释放滚轮事件给浏览器，解决滚动劫持 |
 | 数据源 | `/api/visit`（真实） → `FALLBACK_COORDS`（降级） | API 失败时自动降级 |
 
 ### 2.8 Favicon 规范

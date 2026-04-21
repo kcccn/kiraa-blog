@@ -250,6 +250,7 @@
           autoRotateSpeed: 4,
           distance: 200,
           zoomSensitivity: 0,
+          rotateSensitivity: 1,
         },
         itemStyle: {
           borderWidth: 0.4,
@@ -382,10 +383,19 @@
       );
       nexusChart.setOption(buildOption(baseTexture, window.fixit.isDark, state.coords));
 
+      var nexusCanvas = host.querySelector('canvas') || host;
+      nexusCanvas.addEventListener('wheel', function (e) {
+        e.stopPropagation();
+      }, { passive: true });
+
       window.fixit.switchThemeEventSet.add(function () {
         nexusChart.dispose();
         nexusChart = window.echarts.init(host, window.fixit.isDark ? 'dark' : 'light', { renderer: 'canvas' });
         nexusChart.setOption(buildOption(baseTexture, window.fixit.isDark, state.coords));
+        var newCanvas = host.querySelector('canvas') || host;
+        newCanvas.addEventListener('wheel', function (e) {
+          e.stopPropagation();
+        }, { passive: true });
       });
       window.fixit.resizeEventSet.add(function () {
         nexusChart.resize();
