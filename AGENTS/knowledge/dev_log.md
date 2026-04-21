@@ -224,3 +224,11 @@
 - **踩坑点**：ECharts-GL `scatter3D` 基于 WebGL 渲染管线，不支持 `symbolSize` 和 `itemStyle.color` 的函数回调，也不支持 `RadialGradient`；必须通过预计算分桶 + 多层 series 叠加 + `blendMode: 'lighter'` 加色混合来近似实现
 - **解决方案**：将坐标数据按权重分 4 桶（S:1 / M:2-5 / L:6-15 / XL:16+），每桶拆为核心层（小尺寸高透明度）和外晕层（大尺寸低透明度），共最多 16 个 series；`blendMode: 'lighter'` 使重叠区域自然更亮，模拟径向渐变；半径保底 3px 确保单次访问可见
 - **对 Agent 的强制约束**：WebGL `scatter3D` 环境下绝对禁止使用函数回调配置 size 和 color，必须采用分桶图层生成独立 series 的静态策略；散点半径保底 `symbolSize ≥ 3`
+
+### [2026-04-21] 回归单点模式，移除大小累计与渐变
+
+- **事件类型**：功能回退
+- **触发原因**：分桶图层叠加渲染效果不符合预期，回归简洁统一小圆点
+- **踩坑点**：无新增
+- **解决方案**：回退 `buildOption()` 为 2 series 固定 symbolSize 模式，丢弃 weight 维度
+- **对 Agent 的强制约束**：无新增约束

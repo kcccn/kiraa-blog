@@ -211,64 +211,16 @@
 
   function buildOption(fallbackTexture, isDark, coords) {
     var allData = coords || FALLBACK_COORDS;
+    var realUsers = [];
+    var proxyNodes = [];
 
-    var BUCKETS = [
-      { id: 'S',  min: 1,        max: 1,        coreSize: 3,  glowSize: 6  },
-      { id: 'M',  min: 2,        max: 5,        coreSize: 8,  glowSize: 16 },
-      { id: 'L',  min: 6,        max: 15,       coreSize: 14, glowSize: 28 },
-      { id: 'XL', min: 16,       max: Infinity, coreSize: 20, glowSize: 40 },
-    ];
-
-    var COLOR_MAP = {
-      'real-core':  'rgba(0,255,136,0.8)',
-      'real-glow':  'rgba(0,255,136,0.2)',
-      'proxy-core': 'rgba(255,51,102,0.5)',
-      'proxy-glow': 'rgba(255,51,102,0.15)',
-    };
-
-    var bucketData = {};
     for (var i = 0; i < allData.length; i++) {
       var item = allData[i];
-      var lon = item[0], lat = item[1], type = item[3], weight = item[4] || 1;
-      var typeName = type === 1 ? 'proxy' : 'real';
-      for (var b = 0; b < BUCKETS.length; b++) {
-        if (weight >= BUCKETS[b].min && weight <= BUCKETS[b].max) {
-          var coreKey = typeName + '-' + BUCKETS[b].id + '-core';
-          var glowKey = typeName + '-' + BUCKETS[b].id + '-glow';
-          if (!bucketData[coreKey]) bucketData[coreKey] = [];
-          if (!bucketData[glowKey]) bucketData[glowKey] = [];
-          bucketData[coreKey].push([lon, lat, 0]);
-          bucketData[glowKey].push([lon, lat, 0]);
-          break;
-        }
+      if (item[3] === 1) {
+        proxyNodes.push([item[0], item[1], 0]);
+      } else {
+        realUsers.push([item[0], item[1], 0]);
       }
-    }
-
-    var series = [];
-    for (var key in bucketData) {
-      if (!bucketData.hasOwnProperty(key)) continue;
-      if (bucketData[key].length === 0) continue;
-      var parts = key.split('-');
-      var typeName = parts[0];
-      var bucketId = parts[1];
-      var layer = parts[2];
-      var bucket = null;
-      for (var bi = 0; bi < BUCKETS.length; bi++) {
-        if (BUCKETS[bi].id === bucketId) { bucket = BUCKETS[bi]; break; }
-      }
-      var isCore = layer === 'core';
-      series.push({
-        type: 'scatter3D',
-        coordinateSystem: 'globe',
-        blendMode: 'lighter',
-        symbolSize: isCore ? bucket.coreSize : bucket.glowSize,
-        data: bucketData[key],
-        itemStyle: {
-          color: COLOR_MAP[typeName + '-' + layer],
-          opacity: 1,
-        },
-        label: { show: false },
-      });
     }
 
     return {
@@ -304,7 +256,36 @@
           opacity: 0.85,
         },
       },
-      series: series,
+      series: [
+        {
+          type: 'scatter3D',
+          coordinateSystem: 'globe',
+          blendMode: 'lighter',
+          symbolSize: 4,
+          data: realUsers,
+          itemStyle: {
+            color: '#00ff88',
+            opacity: 0.8,
+          },
+          label: {
+            show: false,
+          },
+        },
+        {
+          type: 'scatter3D',
+          coordinateSystem: 'globe',
+          blendMode: 'lighter',
+          symbolSize: 3,
+          data: proxyNodes,
+          itemStyle: {
+            color: '#ff3366',
+            opacity: 0.4,
+          },
+          label: {
+            show: false,
+          },
+        },
+      ],
     };
   }
 

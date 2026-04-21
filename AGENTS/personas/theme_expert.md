@@ -69,7 +69,7 @@ Theme Expert 执行任何操作时，**必须严格遵循** `AGENTS/workflows/ma
 | S-18 | 环境变量（Redis URL/Token 等）不得硬编码到代码中，必须通过 Vercel 后台配置 | 密钥泄露风险（踩坑记录 2026-04-20） |
 | S-19 | `scatter3D` 必须配合 `globe` 组件使用，不可用于 `map3D` | `map3D` 不支持叠加 `scatter3D`（踩坑记录 2026-04-20） |
 | S-20 | 外部 API 调用必须提供降级数据（如 `FALLBACK_COORDS`），不得因后端不可用导致组件空白 | 地球空白比模拟数据更差（踩坑记录 2026-04-20） |
-| S-21 | `blendMode: 'lighter'` 为发光热力效果核心配置，不得移除；散点半径必须按权重分桶映射（S/M/L/XL），保底 `symbolSize ≥ 3`；渐变效果通过核心层 + 外晕层双层叠加实现；WebGL `scatter3D` 环境下绝对禁止使用 `symbolSize` 或 `itemStyle.color` 函数回调 | 移除后散点无法实现越密集越亮效果；WebGL 不支持回调，函数回调会导致渲染异常（踩坑记录 2026-04-20 + 2026-04-21） |
+| S-21 | `blendMode: 'lighter'` 为发光热力效果核心配置，不得移除 | 移除后散点无法实现越密集越亮效果（踩坑记录 2026-04-20） |
 | S-22 | ECharts-GL `globe.environment` 必须设为 `''`（空字符串）而非 `'transparent'`，后者无法消除黑框 | `'transparent'` 在 WebGL canvas 中仍保留黑色底色（踩坑记录 2026-04-20） |
 | S-23 | scatter3D 数据第三维（海拔）必须为 `0`，非零值导致点脱离地球表面 | 值 `1` 表示地球半径的 1 倍，点飞出表面（踩坑记录 2026-04-20） |
 | S-24 | 赛博风格地球必须使用 `shading: 'color'` 而非 `'lambert'`，后者产生真实光影 | `'lambert'` 不适合暗黑赛博风格（踩坑记录 2026-04-20） |
