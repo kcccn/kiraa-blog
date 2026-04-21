@@ -12,6 +12,9 @@ summaryLength = 200
     avatar = "https://github.com/kcccn.png"
     link = "https://github.com/kcccn"
 
+  [params.page]
+    license = '<a rel="license external nofollow noopener noreferrer" href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-hans" target="_blank">CC BY-NC-SA 4.0</a>'
+
   [params.page.math]
     enable = true
     type = "katex"
@@ -60,6 +63,10 @@ summaryLength = 200
       darkTheme = "dark"
       lazyLoad = true
 
+  [params.footer]
+    enable = true
+    since = 2026
+
 [markup]
   _merge = "shallow"
   [markup.highlight]
@@ -82,6 +89,9 @@ summaryLength = 200
         [markup.goldmark.extensions.passthrough.delimiters]
           block = [['\[', '\]'], ['$$', '$$']]
           inline = [['\(', '\)'], ['$', '$']]
+
+[permalinks]
+  posts = '/post/:contentbasename/'
 
 [outputs]
   _merge = "shallow"

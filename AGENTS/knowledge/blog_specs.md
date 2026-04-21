@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# AGENTS/knowledge/blog_specs.md
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# AGENTS/knowledge/blog_specs.md
 <!-- File: AGENTS/knowledge/blog_specs.md -->
 
 # Kiraa-Blog 项目规约
@@ -256,10 +256,10 @@ Vercel Serverless Function 放置在项目根目录 `api/` 下，文件名即路
 
 ### 6.1 目录结构
 
-所有文章位于 `content/post/` 目录下，采用 **Page Bundle** 形式组织：
+所有文章位于 `content/posts/` 目录下，采用 **Page Bundle** 形式组织：
 
 ```
-content/post/<article-name>/
+content/posts/<article-name>/
 ├── index.md              # 文章正文（必需）
 └── img/                  # 文章图片资源（可选，与 index.md 同级）
     ├── cover.jpg         # 封面图
@@ -267,6 +267,8 @@ content/post/<article-name>/
 ```
 
 **核心规则**：`index.md` 与 `img/` 目录必须同级，构成一个完整的 Page Bundle。图片资源放在 `img/` 子目录中，通过相对路径引用。
+
+**目录名约束**：内容目录必须为 `content/posts/`（复数），与 FixIt 主题模板 `layouts/posts/single.html` 对齐。Hugo 自动按目录名匹配模板类型，无需在 Front Matter 中手动添加 `type: posts`。URL 通过 `[permalinks]` 配置保持为 `/post/:contentbasename/`。
 
 ### 6.2 Front Matter 必需字段
 
@@ -319,3 +321,56 @@ featuredImage: "img/cover.jpg" # 可选，封面图相对路径
 - `footer-globe-head.html` 和 `footer-globe.html` 已清空（仅保留注释），不得恢复
 - Nexus 页面：`#nexus-globe` 页面内地球，由 `initNexusGlobe()` 初始化，`hasEcharts` 由模板内 `.Store.Set` 触发
 - 非 Nexus 页面：无地球，无 echarts 加载，零性能开销
+
+---
+
+## 8. 双重开源协议规范
+
+### 8.1 协议策略
+
+本仓库采用双重开源协议，分离保护代码资产与内容资产：
+
+| 资产类型 | 协议 | 配置位置 | 说明 |
+|----------|------|----------|------|
+| 代码 & 基础设施 | MIT License | 根目录 `LICENSE` 文件 | 主题配置、布局模板、自定义脚本（如 V10 3D 地球） |
+| 博客内容 | CC BY-NC-SA 4.0 | `hugo.toml` → `[params.page].license` | `content/` 目录下所有原创 Markdown 文件，署名 **kiraa** |
+
+### 8.2 协议渲染机制
+
+- **文章级 CC 协议**：通过 `[params.page].license` 配置注入，FixIt 主题在 `single/footer.html` 的 `post-info-license` div 中渲染，位于文章底部更新日期右侧。仅文章页显示，首页/归档页/Nexus 页不受影响
+- **页脚保持纯洁**：`[params.footer]` 仅配置 `since = 2026`，不注入 license HTML
+- **GitHub 声明**：根目录 `README.md` 包含双重 License 声明段落
+
+### 8.3 当前配置
+
+```toml
+[params.page]
+  license = '<a rel="license external nofollow noopener noreferrer" href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-hans" target="_blank">CC BY-NC-SA 4.0</a>'
+
+[params.footer]
+  enable = true
+  since = 2026
+```
+
+### 8.4 维护约束
+
+- 不得在 `[params.footer]` 中添加 license HTML，保持页脚纯洁
+- CC 链接指向 `deed.zh-hans`（中文版），与 `languageCode = 'zh-cn'` 一致
+- MIT 协议年份为 2026，版权人为 kiraa
+
+---
+
+## 9. Permalinks 配置
+
+### 9.1 当前配置
+
+```toml
+[permalinks]
+  posts = '/post/:contentbasename/'
+```
+
+### 9.2 设计说明
+
+- 内容目录为 `content/posts/`（复数，匹配 FixIt 模板），但 URL 保持 `/post/xxx/`（单数，简洁美观）
+- 必须使用 `:contentbasename` 而非已弃用的 `:filename`（Hugo 0.144.0+ 弃用）
+- 修改 permalinks 配置会导致已有外部链接和 Giscus 评论脱钩，不得随意更改

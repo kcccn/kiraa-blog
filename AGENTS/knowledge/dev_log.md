@@ -121,6 +121,14 @@
 - **解决方案**：将 `hugo.toml` 中 `<YOUR_REPO_ID>` 替换为 `R_kgDORC3Ygw`，`<YOUR_CATEGORY_ID>` 替换为 `DIC_kwDORC3Yg84C7PuG`，构建验证通过
 - **对 Agent 的强制约束**：无新增约束
 
+### [2026-04-21] 配置双重开源协议 + 目录重命名对齐模板
+
+- **事件类型**：功能添加 + 架构重构
+- **触发原因**：需要为博客配置分离的双重开源协议（代码 MIT + 内容 CC BY-NC-SA 4.0），同时发现文章目录名与 FixIt 模板名不一致导致 `params.page.license` 无法渲染
+- **踩坑点**：FixIt 主题的文章模板位于 `layouts/posts/single.html`（复数），而内容目录为 `content/post/`（单数）；Hugo 默认使用目录名作为 `type`，导致文章使用 `page.html` 模板（不含 `single/footer.html`），`params.page.license` 无法渲染；每篇加 `type: posts` 可临时修复但属于人为约束，遗漏即回退；重命名目录为 `content/posts/` 是更优方案，Hugo 自动按目录名匹配模板，零遗漏风险；`:filename` permalink token 在 Hugo 0.144.0 中已弃用，需改用 `:contentbasename`
+- **解决方案**：在根目录新建 `LICENSE`（MIT 协议）和 `README.md`（双重 License 声明）；在 `hugo.toml` 中添加 `[params.page].license`（CC BY-NC-SA 4.0 超链接）和 `[params.footer]`（仅 `since = 2026`，保持页脚纯洁）；重命名 `content/post/` → `content/posts/` 使目录名与模板名自动对齐；添加 `[permalinks] posts = '/post/:contentbasename/'` 保持 URL 不变；移除所有文章 Front Matter 中的 `type: posts`；还原 `archetypes/default.md`
+- **对 Agent 的强制约束**：文章内容目录必须为 `content/posts/`（复数），与 FixIt 模板 `layouts/posts/single.html` 对齐，禁止恢复为 `content/post/`；文章级 CC 协议通过 `[params.page].license` 配置注入，不得在页脚 `[params.footer]` 中添加 license HTML；`[permalinks]` 必须使用 `:contentbasename` 而非已弃用的 `:filename`；新建文章无需手动添加 `type: posts`，目录名自动匹配
+
 ### [2026-04-21] 构建 Nexus 集成页面：3D 地球 + 友链 + 留言板
 
 - **事件类型**：功能添加

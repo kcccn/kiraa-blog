@@ -159,6 +159,6 @@
 
 ---
 
-> 作者:   
-> URL: http://localhost:1313/post/learning_openonerec/  
+> 作者: [kiraa](https://github.com/kcccn)  
+> URL: https://kiraa-blog.vercel.app/post/learning_openonerec/  
 

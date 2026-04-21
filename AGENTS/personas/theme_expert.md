@@ -90,6 +90,9 @@ Theme Expert 执行任何操作时，**必须严格遵循** `AGENTS/workflows/ma
 | S-39 | 友链数据必须放 `data/friends.yml`，复用 `.Site.Data.friends` 路径；YAML 数据文件中的 URL 值必须用双引号包裹 | 与 FixIt 原生 friends 模板数据路径一致；不加引号会导致 Hugo YAML 解析器报错（踩坑记录 2026-04-21） |
 | S-40 | `layouts/nexus.html` 为项目新增模板（非同名覆盖），主题升级无需同步 | 与 S-09 区分：同名覆盖需手动同步，新增模板无此风险（踩坑记录 2026-04-21） |
 | S-41 | 3D 地球脚本 100% 隔离在 `/nexus/` 单页；`footer-globe-head.html` 和 `footer-globe.html` 必须保持为空（仅注释），禁止恢复全局 footer 地球 | ECharts + ECharts-GL 体积庞大，全局加载严重影响首屏性能；非 Nexus 页面不得加载 echarts（踩坑记录 2026-04-21） |
+| S-42 | 文章内容目录必须为 `content/posts/`（复数），与 FixIt 模板 `layouts/posts/single.html` 对齐，禁止恢复为 `content/post/` | 目录名与模板名自动匹配，无需每篇加 `type: posts`（踩坑记录 2026-04-21） |
+| S-43 | 文章级 CC 协议通过 `[params.page].license` 配置注入，不得在页脚 `[params.footer]` 中添加 license HTML | 数据与视图解耦：CC 协议仅出现在文章页底部，页脚保持纯洁（踩坑记录 2026-04-21） |
+| S-44 | `[permalinks]` 必须使用 `:contentbasename` 而非已弃用的 `:filename` | `:filename` 在 Hugo 0.144.0 中已弃用（踩坑记录 2026-04-21） |
 
 ## 能力要求
 
