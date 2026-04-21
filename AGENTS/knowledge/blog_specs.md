@@ -294,3 +294,27 @@ featuredImage: "img/cover.jpg" # 可选，封面图相对路径
 - 文章目录名：`learning-<topic>` 或 `<descriptive-name>`，小写字母 + 连字符
 - 图片文件名：小写字母、数字、连字符，禁止空格和特殊字符
 - 封面图统一命名为 `cover.jpg`
+
+---
+
+## 7. Nexus 集成页面规范
+
+### 7.1 页面结构
+
+| 区域 | 实现 | 说明 |
+|------|------|------|
+| Header | 模板 `layouts/nexus.html` | 渲染 title + subtitle |
+| 3D 地球 | `#nexus-globe` 容器 + `custom.js` `initNexusGlobe()` | 页面内专属地球，独立于 footer 全局地球 |
+| 友链 | `.Site.Data.friends` → CSS Grid 赛博卡片 | 数据源 `data/friends.yml` |
+| 留言板 | FixIt 原生 `single/comment.html`（Giscus） | `comment: true` 触发 |
+| Markdown 正文 | `.Content` | 支持友链申请格式说明等 |
+
+### 7.2 数据格式
+
+友链数据文件：`data/friends.yml`，字段：`nickname`/`avatar`/`url`/`description`。URL 值必须用双引号包裹。
+
+### 7.3 地球隔离规则
+
+- Nexus 页面：`#nexus-globe` 页面内地球，由 `initNexusGlobe()` 初始化
+- 非 Nexus 页面：footer 全局地球，由 `initFooterGlobe()` 初始化
+- `footer-globe-head.html` 排除 `/nexus/` 路径，避免双地球

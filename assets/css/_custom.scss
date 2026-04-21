@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿/* assets/css/_custom.scss */
+﻿﻿﻿﻿﻿﻿﻿﻿﻿/* assets/css/_custom.scss */
 
 /* ------------------------------------------------------- */
 /* 方案：直接覆盖 CSS 变量 (推荐，兼容性最好)            */
@@ -73,4 +73,95 @@
 
 .echarts-globe-wrapper[hidden] {
     display: none;
+}
+
+/* Nexus Page */
+.nexus {
+    .nexus-globe-section {
+        display: flex;
+        justify-content: center;
+        margin: 2rem 0;
+
+        #nexus-globe {
+            width: 600px;
+            height: 600px;
+            max-width: calc(100vw - 2rem);
+            max-height: calc(100vw - 2rem);
+        }
+    }
+
+    .nexus-section-title {
+        color: #42b883;
+        border-bottom: 1px solid rgba(66, 184, 131, 0.3);
+        padding-bottom: 0.5rem;
+        margin: 2rem 0 1rem;
+        font-size: 1.5rem;
+
+        [data-theme='dark'] & {
+            border-bottom-color: rgba(66, 184, 131, 0.2);
+        }
+    }
+
+    .nexus-friend-links {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+
+    .nexus-friend-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 1.25rem 0.75rem;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(66, 184, 131, 0.2);
+        box-shadow: 0 0 8px rgba(66, 184, 131, 0.1);
+        text-decoration: none;
+        transition: all 0.3s ease;
+
+        [data-theme='dark'] & {
+            background: rgba(66, 184, 131, 0.05);
+            border-color: rgba(66, 184, 131, 0.15);
+        }
+
+        &:hover {
+            border-color: #42b883;
+            box-shadow: 0 0 16px rgba(66, 184, 131, 0.3);
+            transform: translateY(-2px);
+        }
+    }
+
+    .nexus-friend-avatar {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid rgba(66, 184, 131, 0.3);
+        margin-bottom: 0.75rem;
+    }
+
+    .nexus-friend-nickname {
+        color: #42b883;
+        font-weight: 600;
+        font-size: 0.9rem;
+        max-width: 100%;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    .nexus-friend-desc {
+        color: var(--fixit-color-secondary, #90a4ae);
+        font-size: 0.75rem;
+        margin-top: 0.25rem;
+        max-width: 100%;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        text-align: center;
+    }
 }

@@ -1,9 +1,10 @@
-{{- $relPermalink := lower (.RelPermalink | default "") -}}
+﻿{{- $relPermalink := lower (.RelPermalink | default "") -}}
 {{- $isArchivesOrOffline := or
   (and (eq .Kind "home") (in $relPermalink "/archives/"))
   (in $relPermalink "/offline/")
 -}}
-{{- if not $isArchivesOrOffline -}}
+{{- $isNexus := in $relPermalink "/nexus/" -}}
+{{- if and (not $isArchivesOrOffline) (not $isNexus) -}}
   {{- .Store.Set "hasEcharts" true -}}
   <script>window.__kiraaFooterGlobeEnabled=true;</script>
 {{- end -}}

@@ -1,0 +1,54 @@
+﻿{{- define "title" -}}
+  {{- cond (.Param "capitalizeTitles") (title .Title) .Title -}}
+  {{- if .Site.Params.withSiteTitle }} {{ .Site.Params.titleDelimiter }} {{ .Site.Title }}{{- end -}}
+{{- end -}}
+
+{{- define "content" -}}
+  {{- $params := partial "function/params.html" -}}
+  {{- .Store.Set "hasEcharts" true -}}
+  <article class="page single special nexus">
+    <div class="header">
+      <h1 class="single-title animate__animated animate__pulse animate__faster">
+        {{- cond (.Param "capitalizeTitles") (title .Title) .Title -}}
+      </h1>
+      {{- with $params.subtitle -}}
+        <p class="single-subtitle animate__animated animate__fadeIn">{{ . | $.RenderString }}</p>
+      {{- end -}}
+    </div>
+
+    {{- /* Earth Container */ -}}
+    <section class="nexus-globe-section">
+      <div id="nexus-globe" class="echarts-globe" data-echarts-globe
+        data-echarts-gl-src="{{ (resources.Get "lib/echarts-gl/echarts-gl.min.js").RelPermalink }}"
+        data-base-texture="{{ (resources.Get "images/echarts/world.jpg").RelPermalink }}"
+        aria-hidden="true"></div>
+    </section>
+
+    {{- /* Friends Section */ -}}
+    <section class="nexus-friends-section">
+      <h2 class="nexus-section-title">Friends</h2>
+      <div class="nexus-friend-links">
+        {{ range $index, $friend := .Site.Data.friends }}
+          <a class="nexus-friend-card" title="{{ $friend.description | safeHTML }}"
+             href="{{ $friend.url | safeURL }}" rel="external noopener" target="_blank">
+            {{- if $friend.avatar -}}
+              <img class="nexus-friend-avatar" src="{{ $friend.avatar }}" alt="{{ $friend.nickname }}" loading="lazy" />
+            {{- end -}}
+            <span class="nexus-friend-nickname">@{{ $friend.nickname }}</span>
+            {{- with $friend.description -}}
+              <span class="nexus-friend-desc">{{ . }}</span>
+            {{- end -}}
+          </a>
+        {{ end }}
+      </div>
+    </section>
+
+    {{- /* Content (Markdown body) */ -}}
+    <div class="content" id="content">
+      {{- dict "Content" .Content "Ruby" $params.ruby "Fraction" $params.fraction "Fontawesome" $params.fontawesome | partial "function/content.html" | safeHTML -}}
+    </div>
+
+    {{- /* Comment Section */ -}}
+    {{- partial "single/comment.html" . -}}
+  </article>
+{{- end -}}

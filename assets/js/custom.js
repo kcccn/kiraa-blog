@@ -2,6 +2,7 @@
   const FOOTER_CONTAINER_SELECTOR = '.footer-container';
   const FOOTER_CONFIG_SELECTOR = '#footer-globe-config';
   const GLOBE_SELECTOR = '[data-echarts-globe]';
+  const NEXUS_GLOBE_SELECTOR = '#nexus-globe[data-echarts-globe]';
   const VISIT_API = '/api/visit';
 
   const FALLBACK_COORDS = (function () {
@@ -357,13 +358,52 @@
     state.eventsBound = true;
   }
 
-  function boot() {
-    if (!getConfig() && !getHost()) {
+  function initNexusGlobe() {
+    var host = document.querySelector(NEXUS_GLOBE_SELECTOR);
+    if (!host) return;
+    if (!window.fixit || !window.echarts || !window.config?.echarts) return;
+    if (!supportsWebGL()) {
+      host.parentElement.hidden = true;
       return;
     }
+    var echartsGlSrc = host.dataset.echartsGlSrc;
+    var baseTexture = host.dataset.baseTexture;
+    if (!echartsGlSrc || !baseTexture) return;
 
-    bindFixItEvents();
-    initFooterGlobe();
+    loadEchartsGL(echartsGlSrc).then(async function () {
+      if (!state.coords) {
+        var fetched = await fetchVisitCoords();
+        state.coords = fetched || FALLBACK_COORDS;
+      }
+      var nexusChart = window.echarts.init(
+        host,
+        window.fixit.isDark ? 'dark' : 'light',
+        { renderer: 'canvas' }
+      );
+      nexusChart.setOption(buildOption(baseTexture, window.fixit.isDark, state.coords));
+
+      window.fixit.switchThemeEventSet.add(function () {
+        nexusChart.dispose();
+        nexusChart = window.echarts.init(host, window.fixit.isDark ? 'dark' : 'light', { renderer: 'canvas' });
+        nexusChart.setOption(buildOption(baseTexture, window.fixit.isDark, state.coords));
+      });
+      window.fixit.resizeEventSet.add(function () {
+        nexusChart.resize();
+      });
+    }).catch(function (error) {
+      console.warn('[nexus-globe] Failed to initialize.', error);
+      host.parentElement.hidden = true;
+    });
+  }
+
+  function boot() {
+    if (getConfig() || getHost()) {
+      bindFixItEvents();
+      initFooterGlobe();
+    }
+    if (document.querySelector(NEXUS_GLOBE_SELECTOR)) {
+      initNexusGlobe();
+    }
   }
 
   if (document.readyState !== 'loading') {

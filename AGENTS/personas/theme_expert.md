@@ -86,6 +86,9 @@ Theme Expert 执行任何操作时，**必须严格遵循** `AGENTS/workflows/ma
 | S-35 | 去重与聚合必须使用双键分离（`geo:uv:{day}` Set + `geo:heat:{day}` Hash）；写入热力数据时必须同步注册日期到 `geo:days` Set | 单 Set 架构无法实现权重聚合，NAT 下坐标丢失；无日期注册表则无法动态读取全量历史数据（踩坑记录 2026-04-20 + 2026-04-21） |
 | S-36 | 禁止使用 Redis `KEYS` 命令，必须使用 `SMEMBERS geo:days` + Pipeline | `KEYS` 是 O(N) 阻塞扫描，生产环境严禁；固定日期列表无法覆盖全量历史数据（踩坑记录 2026-04-20 + 2026-04-21） |
 | S-37 | ip-api 429 必须触发 60s 熔断器；前端视觉属性必须预计算 | 429 限流无保护会持续失败；ECharts-GL 函数回调兼容性不稳定（踩坑记录 2026-04-20） |
+| S-38 | Nexus 页面地球容器 `#nexus-globe` 必须在 `layouts/nexus.html` 模板内直接输出，不得通过 customPartials 注入 | FixIt `page.html` 无 `postContentBefore` block，customPartials 无法向普通 page 注入内容区组件（踩坑记录 2026-04-21） |
+| S-39 | 友链数据必须放 `data/friends.yml`，复用 `.Site.Data.friends` 路径；YAML 数据文件中的 URL 值必须用双引号包裹 | 与 FixIt 原生 friends 模板数据路径一致；不加引号会导致 Hugo YAML 解析器报错（踩坑记录 2026-04-21） |
+| S-40 | `layouts/nexus.html` 为项目新增模板（非同名覆盖），主题升级无需同步 | 与 S-09 区分：同名覆盖需手动同步，新增模板无此风险（踩坑记录 2026-04-21） |
 
 ## 能力要求
 

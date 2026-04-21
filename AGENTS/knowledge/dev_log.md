@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# AGENTS/knowledge/dev_log.md
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# AGENTS/knowledge/dev_log.md
 <!-- File: AGENTS/knowledge/dev_log.md -->
 
 # 长期记忆与决策库
@@ -120,6 +120,14 @@
 - **踩坑点**：无
 - **解决方案**：将 `hugo.toml` 中 `<YOUR_REPO_ID>` 替换为 `R_kgDORC3Ygw`，`<YOUR_CATEGORY_ID>` 替换为 `DIC_kwDORC3Yg84C7PuG`，构建验证通过
 - **对 Agent 的强制约束**：无新增约束
+
+### [2026-04-21] 构建 Nexus 集成页面：3D 地球 + 友链 + 留言板
+
+- **事件类型**：功能添加
+- **触发原因**：需要创建集 3D 地球、友链、留言板于一体的顶级页面
+- **踩坑点**：FixIt 的 `customPartials.postContentBefore` 等 block 仅在 `posts/single.html` 中存在，`page.html` 无此 block，无法通过 customPartials 向普通页面注入内容区组件；footer partial 运行在 `partialCached` 下不可做页面级分支（S-14）；因此 Nexus 页面的地球容器必须内嵌在专用模板中；`data/friends.yml` 必须用引号包裹 URL 值，否则 Hugo YAML 解析器报错 `mapping value is not allowed in this context`；Write 工具生成的文件可能带 UTF-8 BOM，必须检查并移除（S-07）
+- **解决方案**：创建 `layouts/nexus.html` 专用模板（新增文件，非同名覆盖），内嵌地球容器 `#nexus-globe`；友链数据放 `data/friends.yml` 复用 FixIt 原生 `.Site.Data.friends` 路径；在 `custom.js` 中新增 `initNexusGlobe()` 独立初始化逻辑；在 `footer-globe-head.html` 中排除 Nexus 页面避免双地球
+- **对 Agent 的强制约束**：Nexus 页面地球容器 `#nexus-globe` 必须在 `layouts/nexus.html` 模板内直接输出，不得通过 customPartials 注入（page 类型无 postContentBefore block）；Nexus 页面的 `hasEcharts` Store 在模板 `define "content"` 内设置，不依赖 footer-globe-head.html；友链数据必须放 `data/friends.yml` 以复用 `.Site.Data.friends` 路径；YAML 数据文件中的 URL 值必须用双引号包裹
 
 ### [2026-04-20] 新增 Vercel Serverless Function：访客位置收集 API
 
