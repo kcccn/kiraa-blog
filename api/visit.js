@@ -1,4 +1,4 @@
-﻿const { Redis } = require('@upstash/redis');
+const { Redis } = require('@upstash/redis');
 const crypto = require('crypto');
 
 const ARBITRATION_DISTANCE_KM = 100;

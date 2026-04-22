@@ -1,5 +1,11 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# AGENTS/knowledge/dev_log.md
-<!-- File: AGENTS/knowledge/dev_log.md -->
+# AGENTS/knowledge/dev_log.md
+<!-- 原始来源：AGENTS/knowledge/dev_log.md -->
+
+# 历史开发总账（Archive）
+
+> 本文件仅用于历史考古与设计演进追溯，不属于默认工作流输入。
+> 当 `docs/agents/*` 与代码、ADR 仍无法解释当前行为时，才回到这里查阅历史上下文。
+> 下方主体内容保留自旧导出文件，便于追溯历史决策与踩坑过程。
 
 # 长期记忆与决策库
 

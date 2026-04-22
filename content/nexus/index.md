@@ -1,4 +1,4 @@
-﻿---
+---
 title: "Nexus"
 author: "kiraa"
 layout: nexus

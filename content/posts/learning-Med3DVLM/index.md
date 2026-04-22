@@ -1,4 +1,4 @@
-﻿---
+---
 title: "Med3DVLM 模型架构及训练流程详解" 
 date:  2026-01-30 
 draft: false

@@ -1,4 +1,4 @@
-﻿# ADR-004: Serverless 流量遥测系统
+# ADR-004: Serverless 流量遥测系统
 
 ## Status
 

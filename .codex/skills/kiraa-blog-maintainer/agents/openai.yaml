@@ -1,0 +1,4 @@
+version: 1
+display_name: Kiraa Blog 维护者
+short_description: 维护 Kiraa Blog 仓库，覆盖 Hugo/FixIt、Nexus、telemetry、仓库内实现品味与 active memory 自动写回。
+default_prompt: 使用仓库内的 AGENTS 入口、active memory、ADR 与 repo-local skill 路由来维护 Kiraa Blog，并在产生稳定记忆变化时自动写回 docs/agents。

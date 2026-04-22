@@ -1,4 +1,4 @@
-﻿---
+---
 title: "OpenOneRec 论文阅读笔记" 
 date:  2026-01-28
 draft: false

@@ -1,4 +1,4 @@
-﻿# ADR-002: Nexus 集成页面
+# ADR-002: Nexus 集成页面
 
 ## Status
 
