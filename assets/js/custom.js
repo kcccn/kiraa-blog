@@ -567,6 +567,22 @@
       });
   }
 
+  function shuffleFriendLinks() {
+    var selectors = ['.friend-links', '.nexus-friend-links'];
+    selectors.forEach(function (selector) {
+      var container = document.querySelector(selector);
+      if (!container) return;
+      var items = Array.from(container.children);
+      for (var i = items.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        if (i !== j) {
+          container.insertBefore(items[j], items[i]);
+          items.splice(j, 1, items[i]);
+        }
+      }
+    });
+  }
+
   function boot() {
     if (getConfig() || getHost()) {
       bindFixItEvents();
@@ -576,6 +592,7 @@
       initNexusGlobe();
       initPulseChart();
     }
+    shuffleFriendLinks();
   }
 
   if (document.readyState !== 'loading') {
