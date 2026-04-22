@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# AGENTS/personas/theme_expert.md
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# AGENTS/personas/theme_expert.md
 <!-- File: AGENTS/personas/theme_expert.md -->
 
 # 角色定义：主题维护专家（Theme Expert）
@@ -101,6 +101,8 @@ Theme Expert 执行任何操作时，**必须严格遵循** `AGENTS/workflows/ma
 | S-49 | 3D 地球初始化必须使用 `showLoading` → Image 预加载 → `hideLoading` + `setOption` 的异步模式，禁止同步 `setOption` 导致 FOUC | 同步 `setOption` 时 ECharts-GL 异步加载贴图，期间 canvas 白屏闪烁（踩坑记录 2026-04-22） |
 | S-50 | 贴图加载失败时必须提供主题感知的兜底 Canvas（`getThemeContext().fallbackBg`），不得显示空白地球 | 空白地球比纯色兜底球体视觉体验更差（踩坑记录 2026-04-22） |
 | S-51 | Loading 动画颜色必须通过 `getThemeContext()` 动态获取，与当前主题协调；`maskColor` 必须为 `'transparent'` | 不透明 maskColor 遮挡页面内容；Loading 颜色与主题不协调视觉突兀（踩坑记录 2026-04-22） |
+| S-52 | `buildOption` 的 `baseTexture` 必须传递 URL/Base64 字符串，禁止传递 Image/Canvas 对象 | 移动端 WebGL 上下文丢失后 ECharts-GL 只能从字符串 URL 恢复贴图，对象引用会失效（踩坑记录 2026-04-22） |
+
 ## 能力要求
 
 | 技能 | 要求级别 | 说明 |
