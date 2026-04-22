@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# AGENTS/knowledge/blog_specs.md
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# AGENTS/knowledge/blog_specs.md
 <!-- File: AGENTS/knowledge/blog_specs.md -->
 
 # Kiraa-Blog 项目规约
@@ -224,6 +224,7 @@ Vercel Serverless Function 放置在项目根目录 `api/` 下，文件名即路
 - **熔断器**：ip-api 429 触发 `geo:circuit_breaker`（60s TTL），期间跳过定位但仍返回热力数据
 - **多日读取**：`SMEMBERS geo:days` 获取全部日期 + Pipeline `HGETALL`，禁止使用 `KEYS` 命令
 - **前端参数**：`GET /api/visit?tzOffset={minutes}` 传递浏览器时区偏移
+- **趋势接口**：`GET /api/visit?stats=daily` 返回近 14 天 UV 趋势数据，格式 `{ daily: [{date, uv}] }`，使用 `SMEMBERS geo:days` + Pipeline `SCARD geo:uv:{day}`
 - **响应格式**：`{ count: number, coords: [[lon, lat, type, weight], ...] }`
 - **前端渲染**：预计算 symbolSize + RGBA 颜色；真实用户 `rgba(0,255,136,alpha)`；代理节点 `rgba(255,51,102,alpha)`；`blendMode: 'lighter'`
 - **降级策略**：Redis 未配置返回 503；熔断器激活时跳过定位；坐标获取失败跳过存储但仍返回已有数据

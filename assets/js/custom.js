@@ -424,14 +424,40 @@
         var chart = window.echarts.init(el, null, { renderer: 'svg' });
         var pulseOption = {
           backgroundColor: 'transparent',
-          grid: { top: 10, bottom: 20, left: 0, right: 0, containLabel: false },
-          xAxis: { type: 'category', show: false, data: dates },
+          tooltip: {
+            trigger: 'axis',
+            backgroundColor: 'rgba(10, 15, 20, 0.85)',
+            borderColor: 'rgba(0, 255, 136, 0.5)',
+            borderWidth: 1,
+            textStyle: { color: '#e0e0e0', fontSize: 13 },
+            padding: [8, 12],
+            formatter: function (params) {
+              var date = params[0].name;
+              var count = params[0].value;
+              return '<div style="font-family:monospace">' +
+                '<span style="color:#888">' + date + '</span><br/>' +
+                'Node Requests: <strong style="color:#00ff88;font-size:16px">' + count + '</strong>' +
+                '</div>';
+            }
+          },
+          grid: { top: 10, bottom: 25, left: '2%', right: '2%', containLabel: true },
+          xAxis: {
+            type: 'category',
+            boundaryGap: false,
+            data: dates,
+            axisLine: { show: false },
+            axisTick: { show: false },
+            axisLabel: { color: '#555', fontFamily: 'monospace', fontSize: 10, margin: 12 }
+          },
           yAxis: { type: 'value', show: false },
           series: [{
             data: uvs,
             type: 'line',
             smooth: true,
-            symbol: 'none',
+            showSymbol: false,
+            symbol: 'circle',
+            symbolSize: 8,
+            itemStyle: { color: '#00ff88', borderColor: '#fff', borderWidth: 1 },
             lineStyle: {
               color: '#00ff88',
               width: 2,
