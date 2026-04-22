@@ -355,7 +355,7 @@
       earthImg.onload = function () {
         if (!state.chart) return;
         state.chart.hideLoading();
-        state.chart.setOption(buildOption(earthImg, window.fixit.isDark, state.coords));
+        state.chart.setOption(buildOption(baseTexture, window.fixit.isDark, state.coords));
       };
       earthImg.onerror = function () {
         if (!state.chart) return;
@@ -367,7 +367,7 @@
         var ctx = fallbackCanvas.getContext('2d');
         ctx.fillStyle = themeContext.fallbackBg;
         ctx.fillRect(0, 0, 4, 4);
-        state.chart.setOption(buildOption(fallbackCanvas, window.fixit.isDark, state.coords));
+        state.chart.setOption(buildOption(fallbackCanvas.toDataURL(), window.fixit.isDark, state.coords));
       };
       earthImg.src = baseTexture;
     } catch (error) {
@@ -433,7 +433,7 @@
         var img = new Image();
         img.onload = function () {
           chart.hideLoading();
-          chart.setOption(buildOption(img, window.fixit.isDark, state.coords));
+          chart.setOption(buildOption(textureUrl, window.fixit.isDark, state.coords));
           bindWheelStopPropagation();
         };
         img.onerror = function () {
@@ -445,7 +445,7 @@
           var fCtx = fallbackCanvas.getContext('2d');
           fCtx.fillStyle = ctx.fallbackBg;
           fCtx.fillRect(0, 0, 4, 4);
-          chart.setOption(buildOption(fallbackCanvas, window.fixit.isDark, state.coords));
+          chart.setOption(buildOption(fallbackCanvas.toDataURL(), window.fixit.isDark, state.coords));
           bindWheelStopPropagation();
         };
         img.src = textureUrl;

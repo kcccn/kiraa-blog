@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# AGENTS/knowledge/dev_log.md
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# AGENTS/knowledge/dev_log.md
 <!-- File: AGENTS/knowledge/dev_log.md -->
 
 # 长期记忆与决策库
@@ -128,6 +128,14 @@
 - **踩坑点**：`buildOption(fallbackTexture, isDark, coords)` 的第一个参数从未被使用，第 230 行硬编码 `baseTexture: CYBER_TEXTURE`（jsDelivr CDN 远程 URL），而 Nexus 模板通过 `data-base-texture` 传入的是本地 `assets/images/echarts/world.jpg` 的 Hugo 管道输出 URL——实际运行时远程 CDN 贴图覆盖了本地资源路径，违反 S-10；ECharts-GL 在 `setOption` 时同步启动贴图异步加载，期间 canvas 显示白屏，无 Loading 动画；贴图加载失败时地球完全空白，无降级机制
 - **解决方案**：1）删除 `CYBER_TEXTURE` 远程 URL 常量，将 `buildOption` 签名修正为 `buildOption(baseTexture, isDark, coords)`，使 `baseTexture` 由调用方显式传入（Image 对象 / Canvas 对象 / URL 字符串），贴图来源回归本地 `world.jpg`；2）新增 `getThemeContext()` 函数，基于 `window.fixit.isDark` 返回主题感知的 Loading 颜色（暗色 `#00ff88` / 亮色 `#009955`）和兜底底色（暗色 `#0a0f14` / 亮色 `#f5f7fa`）；3）重构 `initNexusGlobe()` 和 `initFooterGlobe()` 为异步预加载模式：`echarts.init` → `showLoading`（主题感知颜色 + `maskColor: 'transparent'`）→ `new Image()` 预加载贴图 → `onload` 时 `hideLoading` + `setOption`（传入 Image 对象）→ `onerror` 时 `hideLoading` + 创建 4×4 兜底 Canvas（`themeContext.fallbackBg` 填充）+ `setOption`；4）主题切换时 chart 重建后同样走预加载流程（贴图已在浏览器缓存，几乎瞬时完成）；5）提取 `bindWheelStopPropagation()` 和 `preloadTexture()` 辅助函数消除重复代码
 - **对 Agent 的强制约束**：`buildOption` 的 `baseTexture` 必须由调用方显式传入，禁止在函数内部硬编码远程 URL；3D 地球初始化必须使用 `showLoading` → Image 预加载 → `hideLoading` + `setOption` 的异步模式，禁止同步 `setOption` 导致 FOUC；贴图加载失败时必须提供主题感知的兜底 Canvas（`getThemeContext().fallbackBg`），不得显示空白地球；Loading 动画颜色必须通过 `getThemeContext()` 动态获取，与当前主题协调
+
+### [2026-04-22] 修复移动端 WebGL 上下文丢失与贴图恢复问题
+
+- **事件类型**：Bug 修复
+- **触发原因**：移动端页面滚动导致 WebGL 上下文丢失后，3D 地球贴图无法恢复，出现白屏
+- **踩坑点**：`buildOption(baseTexture, ...)` 的 `baseTexture` 参数在 `onload` 时传入 Image 对象，在 `onerror` 时传入 Canvas 元素。当移动端 WebGL 上下文丢失后，ECharts-GL 无法从 Image/Canvas 对象恢复贴图，只能从 URL 字符串重新加载。Image 对象和 Canvas 元素在 WebGL 上下文丢失后变为无效引用，ECharts-GL 无法从中重新创建纹理
+- **解决方案**：修改 `baseTexture` 传值策略：1）`onload` 成功时传递 URL 字符串（`baseTexture`）而非 Image 对象，利用浏览器 Memory Cache 秒开，并允许 ECharts 在 WebGL 上下文恢复后自动重新加载贴图；2）`onerror` 失败时传递 `fallbackCanvas.toDataURL()`（Base64 字符串）而非 Canvas 元素，确保兜底材质同样可恢复
+- **对 Agent 的强制约束**：`buildOption` 的 `baseTexture` 必须传递 URL/Base64 字符串，禁止传递 Image/Canvas 对象；移动端 WebGL 上下文丢失后 ECharts-GL 只能从字符串 URL 恢复贴图，对象引用会失效
 
 ### [2026-04-22] 移除双分割线，注入赛博脉搏折线图
 

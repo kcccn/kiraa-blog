@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# AGENTS/knowledge/blog_specs.md
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# AGENTS/knowledge/blog_specs.md
 <!-- File: AGENTS/knowledge/blog_specs.md -->
 
 # Kiraa-Blog 项目规约
@@ -150,6 +150,9 @@ assets/ 本地资源提供 JS / 图片
 | 拖拽旋转 | `rotateSensitivity: 1` | 允许左键拖拽旋转 |
 | 滚动释放 | canvas `wheel` → `stopPropagation()` | 释放滚轮事件给浏览器，解决滚动劫持 |
 | 数据源 | `/api/visit`（真实） → `FALLBACK_COORDS`（降级） | API 失败时自动降级 |
+| Loading 动画 | `showLoading` + 主题感知颜色 | 暗色 `#00ff88` / 亮色 `#009955`，`maskColor: 'transparent'` |
+| 贴图预加载 | `new Image()` 异步预加载 → `onload` 后 `setOption` | 消除 FOUC 白屏闪烁 |
+| 贴图加载失败 | 4×4 兜底 Canvas（`getThemeContext().fallbackBg`） | 暗色 `#0a0f14` / 亮色 `#f5f7fa`，优于空白地球 |
 
 ### 2.8 Favicon 规范
 
