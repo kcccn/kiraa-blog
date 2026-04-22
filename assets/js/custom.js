@@ -216,6 +216,20 @@
     };
   }
 
+  function setNexusGlobeRenderState(host, state) {
+    if (!host) return;
+    host.dataset.renderState = state;
+  }
+
+  function revealNexusGlobe(host) {
+    if (!host) return;
+    window.requestAnimationFrame(function () {
+      window.requestAnimationFrame(function () {
+        setNexusGlobeRenderState(host, 'ready');
+      });
+    });
+  }
+
   function buildOption(baseTexture, isDark, coords) {
     var allData = coords || FALLBACK_COORDS;
     var realUsers = [];
@@ -395,6 +409,7 @@
     var host = document.querySelector(NEXUS_GLOBE_SELECTOR);
     if (!host) return;
     if (!window.fixit || !window.echarts || !window.config?.echarts) return;
+    setNexusGlobeRenderState(host, 'loading');
     if (!supportsWebGL()) {
       host.parentElement.hidden = true;
       return;
@@ -444,6 +459,7 @@
           chart.hideLoading();
           chart.setOption(buildOption(textureUrl, window.fixit.isDark, state.coords));
           bindWheelStopPropagation(chart);
+          revealNexusGlobe(host);
         };
         img.onerror = function () {
           console.warn('[nexus-globe] Orbit telemetry failed: Texture lost. Engaging fallback module.');
@@ -456,6 +472,7 @@
           fCtx.fillRect(0, 0, 4, 4);
           chart.setOption(buildOption(fallbackCanvas.toDataURL(), window.fixit.isDark, state.coords));
           bindWheelStopPropagation(chart);
+          revealNexusGlobe(host);
         };
         img.src = textureUrl;
       }
@@ -465,6 +482,7 @@
       window.fixit.switchThemeEventSet.add(function () {
         nexusChart.dispose();
         themeContext = getThemeContext();
+        setNexusGlobeRenderState(host, 'loading');
         nexusChart = window.echarts.init(host, window.fixit.isDark ? 'dark' : 'light', { renderer: 'canvas' });
         nexusChart.showLoading({
           text: 'ESTABLISHING ORBIT...',

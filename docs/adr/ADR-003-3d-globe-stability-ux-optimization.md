@@ -66,6 +66,7 @@ echarts.init → showLoading → new Image() 预加载贴图 → onload: hideLoa
 
 - **Loading 动画**：主题感知颜色（暗色 `#00ff88` / 亮色 `#009955`），`maskColor: 'transparent'`
 - **贴图预加载**：`new Image()` 异步预加载，`onload` 后调用 `setOption`
+- **容器显现**：地球宿主容器默认保持未就绪态；仅在 `setOption` 完成后的下一帧切换到 ready，通过透明度 + 横向位移的 reveal 过渡显现，避免 WebGL 画面硬切出来
 
 ### 3. 移动端上下文恢复
 
@@ -136,6 +137,7 @@ ctx.fillRect(0, 0, 4, 4);
 - chart dispose 后重建时必须重新绑定 wheel 监听器
 - `buildOption` 的 `baseTexture` 必须由调用方显式传入，禁止在函数内部硬编码远程 URL
 - 3D 地球初始化必须使用 `showLoading` → Image 预加载 → `hideLoading` + `setOption` 的异步模式
+- `Nexus` 地球容器必须在资源 ready 后再 reveal，不得在 `setOption` 前直接完全显示
 - 贴图加载失败时必须提供主题感知的兜底 Canvas
 - Loading 动画颜色必须通过 `getThemeContext()` 动态获取
 - `buildOption` 的 `baseTexture` 必须传递 URL/Base64 字符串，禁止传递 Image/Canvas 对象

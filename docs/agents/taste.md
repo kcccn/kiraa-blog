@@ -116,6 +116,23 @@ globe 生命周期、telemetry 仲裁、图片优化、内容渲染边界。
 ### Supersedes
 按事件拆散记录的历史踩坑笔记。
 
+### Rule
+高成本 WebGL 组件在资源 ready 前保持宿主容器未就绪态，ready 后再 reveal，避免把最终画面直接硬切到页面上。
+
+### Why
+对这类组件来说，稳定感不仅来自正确渲染，还来自正确显现。先完成资源预加载，再由宿主容器接管渐显，能避免白闪和生硬跳变。
+
+### Scope
+`Nexus` 地球这类依赖贴图预加载、WebGL 初始化或 fallback 路径的重视觉组件。
+
+### Source
+- `docs/adr/ADR-003-3d-globe-stability-ux-optimization.md`
+- `assets/js/custom.js`
+- `assets/css/_custom.scss`
+
+### Supersedes
+只关注资源 ready、忽略容器 reveal 节奏的旧实现。
+
 ## 反模式
 
 - 直接修改 `themes/FixIt/`，而不是通过项目侧覆盖实现
