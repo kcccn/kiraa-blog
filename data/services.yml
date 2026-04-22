@@ -2,51 +2,50 @@
 # Kiraa Blog 使用的开源服务列表
 
 - name: "Hugo"
-  logo: "https://gohugo.io/favicon-32x32.png"
+  logo: "images/services/hugo.svg"
   url: "https://gohugo.io/"
   description: "静态站点生成器"
 
 - name: "FixIt"
-  logo: "https://fixit.lruihao.cn/favicon-32x32.png"
+  logo: "images/services/fixit.svg"
   url: "https://github.com/hugo-fixit/FixIt"
   description: "Hugo 主题"
 
 - name: "ECharts"
-  logo: "https://echarts.apache.org/favicon.png"
+  logo: "images/services/echarts.svg"
   url: "https://echarts.apache.org/"
   description: "数据可视化库"
 
-- name: "ECharts-GL"
-  logo: "https://echarts.apache.org/favicon.png"
-  url: "https://github.com/ecomfe/echarts-gl"
-  description: "3D 可视化扩展"
-
 - name: "Giscus"
-  logo: "https://giscus.app/favicon.ico"
+  logo: "images/services/giscus.png"
   url: "https://giscus.app/"
   description: "评论系统"
 
-- name: "Upstash Redis"
-  logo: "https://upstash.com/favicon.ico"
+- name: "Upstash"
+  logo: "images/services/upstash.svg"
   url: "https://upstash.com/"
   description: "Serverless Redis"
 
 - name: "Vercel"
-  logo: "https://vercel.com/favicon.ico"
+  logo: "images/services/vercel.svg"
   url: "https://vercel.com/"
   description: "部署平台"
+  invertDark: true
 
 - name: "GitHub"
-  logo: "https://github.githubassets.com/favicons/favicon.svg"
+  logo: "images/services/github.svg"
   url: "https://github.com/"
   description: "代码托管"
+  invertDark: true
 
 - name: "KaTeX"
-  logo: "https://katex.org/favicon-32x32.png"
+  logo: "images/services/katex.svg"
   url: "https://katex.org/"
   description: "数学公式渲染"
+  invertDark: true
 
 - name: "JetBrains Mono"
-  logo: "https://www.jetbrains.com/favicon-32x32.png"
+  logo: "images/services/jetbrains.svg"
   url: "https://www.jetbrains.com/lp/mono/"
   description: "等宽字体"
+  invertDark: true

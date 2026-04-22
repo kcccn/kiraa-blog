@@ -51,14 +51,17 @@
     <section class="nexus-services-section">
       <h2 class="nexus-section-title">Open Source Services</h2>
       <div class="nexus-service-links">
-        {{ range $index, $service := .Site.Data.services }}
-          <a class="nexus-service-card" title="{{ $service.description }}"
-             href="{{ $service.url | safeURL }}" rel="external noopener" target="_blank">
-            {{- if $service.logo -}}
-              <img class="nexus-service-logo" src="{{ $service.logo }}" alt="{{ $service.name }}" loading="lazy" />
+        {{ range shuffle .Site.Data.services }}
+          <a class="nexus-service-card" title="{{ .description }}"
+             href="{{ .url | safeURL }}" rel="external noopener" target="_blank">
+            {{- if .logo -}}
+              {{- $logo := resources.Get .logo -}}
+              {{- if $logo -}}
+                <img class="nexus-service-logo{{ with .invertDark }} nexus-logo-invert-dark{{ end }}" src="{{ $logo.RelPermalink }}" alt="{{ .name }}" loading="lazy" />
+              {{- end -}}
             {{- end -}}
-            <span class="nexus-service-name">{{ $service.name }}</span>
-            {{- with $service.description -}}
+            <span class="nexus-service-name">{{ .name }}</span>
+            {{- with .description -}}
               <span class="nexus-service-desc">{{ . }}</span>
             {{- end -}}
           </a>
