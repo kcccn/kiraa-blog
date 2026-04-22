@@ -216,4 +216,68 @@
         font-size: 0.85rem;
         color: var(--fixit-color-secondary, #90a4ae);
     }
+
+    .nexus-services-section {
+        margin: 2rem 0;
+    }
+
+    .nexus-service-links {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 16px;
+    }
+
+    .nexus-service-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 16px;
+        border-radius: 12px;
+        background: rgba(66, 184, 131, 0.03);
+        border: 1px solid rgba(66, 184, 131, 0.1);
+        text-align: center;
+        text-decoration: none;
+        transition: all 0.3s ease;
+
+        [data-theme='dark'] & {
+            background: rgba(66, 184, 131, 0.05);
+            border-color: rgba(66, 184, 131, 0.15);
+        }
+
+        &:hover {
+            border-color: rgba(66, 184, 131, 0.5);
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(66, 184, 131, 0.1);
+        }
+    }
+
+    .nexus-service-logo {
+        width: 48px;
+        height: 48px;
+        object-fit: contain;
+        margin: 0 auto 12px;
+        filter: grayscale(0.2);
+
+        [data-theme='dark'] & {
+            filter: grayscale(0.1);
+        }
+
+        transition: filter 0.3s ease;
+
+        .nexus-service-card:hover & {
+            filter: grayscale(0);
+        }
+    }
+
+    .nexus-service-name {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #42b883;
+        margin-bottom: 6px;
+    }
+
+    .nexus-service-desc {
+        font-size: 0.75rem;
+        color: var(--fixit-color-secondary, #90a4ae);
+    }
 }

@@ -1,4 +1,4 @@
-{{- define "title" -}}
+﻿{{- define "title" -}}
   {{- cond (.Param "capitalizeTitles") (title .Title) .Title -}}
   {{- if .Site.Params.withSiteTitle }} {{ .Site.Params.titleDelimiter }} {{ .Site.Title }}{{- end -}}
 {{- end -}}
@@ -41,6 +41,25 @@
             <span class="nexus-friend-nickname">@{{ $friend.nickname }}</span>
             {{- with $friend.description -}}
               <span class="nexus-friend-desc">{{ . }}</span>
+            {{- end -}}
+          </a>
+        {{ end }}
+      </div>
+    </section>
+
+    {{- /* Services Section */ -}}
+    <section class="nexus-services-section">
+      <h2 class="nexus-section-title">Open Source Services</h2>
+      <div class="nexus-service-links">
+        {{ range $index, $service := .Site.Data.services }}
+          <a class="nexus-service-card" title="{{ $service.description }}"
+             href="{{ $service.url | safeURL }}" rel="external noopener" target="_blank">
+            {{- if $service.logo -}}
+              <img class="nexus-service-logo" src="{{ $service.logo }}" alt="{{ $service.name }}" loading="lazy" />
+            {{- end -}}
+            <span class="nexus-service-name">{{ $service.name }}</span>
+            {{- with $service.description -}}
+              <span class="nexus-service-desc">{{ . }}</span>
             {{- end -}}
           </a>
         {{ end }}
