@@ -35,23 +35,24 @@ Nexus 页面的 3D 地球组件在开发过程中遇到以下问题：
 ### 1. 滚动劫持修复
 
 - **配置层**：`viewControl.zoomSensitivity: 0` 禁止缩放，`rotateSensitivity: 1` 保留拖拽旋转
-- **事件层**：通过 zrender API 移除 wheel 事件处理器，并在 capture 阶段添加 wheel 监听器调用 `e.stopPropagation()` 和 `e.preventDefault()`
+- **事件层**：通过 zrender API 移除 wheel 事件处理器，并对地球容器下的所有 canvas 在 capture 阶段添加 wheel 监听器调用 `e.stopImmediatePropagation()`；禁止使用 `e.preventDefault()` 阻断浏览器默认滚动
 - **生命周期**：主题切换时 chart 重建后必须重新绑定 wheel 监听器
 
 ```javascript
 function bindWheelStopPropagation(chart) {
-  const canvas = chart.getDom().querySelector('canvas');
-  if (!canvas) return;
+  const canvases = chart.getDom().querySelectorAll('canvas');
+  if (!canvases.length) return;
   
   const zr = chart.getZr();
   if (zr && zr.off) {
     zr.off('wheel');
   }
   
-  canvas.addEventListener('wheel', (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-  }, { capture: true, passive: false });
+  canvases.forEach((canvas) => {
+    canvas.addEventListener('wheel', (e) => {
+      e.stopImmediatePropagation();
+    }, { capture: true, passive: true });
+  });
 }
 ```
 
@@ -131,7 +132,7 @@ ctx.fillRect(0, 0, 4, 4);
 
 ### 维护约束
 
-- ECharts-GL canvas 的 `wheel` 事件必须通过 zrender API 移除 + capture 阶段拦截的方式释放给浏览器
+- ECharts-GL canvas 的 `wheel` 事件必须通过 zrender API 移除 + 对所有 canvas 在 capture 阶段调用 `stopImmediatePropagation()` 的方式释放给浏览器，禁止调用 `preventDefault()` 阻断页面默认滚动
 - chart dispose 后重建时必须重新绑定 wheel 监听器
 - `buildOption` 的 `baseTexture` 必须由调用方显式传入，禁止在函数内部硬编码远程 URL
 - 3D 地球初始化必须使用 `showLoading` → Image 预加载 → `hideLoading` + `setOption` 的异步模式

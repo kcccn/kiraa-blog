@@ -99,6 +99,22 @@ Nexus 页面结构与地球挂载容器。
 ### Supersedes
 按 bug 时间线展开的历史记录。
 
+### Rule
+释放 `Nexus` 地球的滚轮事件时，必须覆盖地球容器下的所有 canvas，并用 `stopImmediatePropagation()` 阻止 chart 在目标层消费滚轮；不能调用 `preventDefault()` 阻断浏览器默认页面滚动。
+
+### Why
+这个页面的预期行为是“滚轮滚动页面、拖拽旋转地球、禁止滚轮缩放”。当前地球实际会生成多个 canvas，只拦截其中一个会留下未处理的目标层监听器，悬停地球时页面仍然会卡住。
+
+### Scope
+`assets/js/custom.js` 中 `Nexus` 地球的 `wheel` 事件绑定与主题切换后的重建流程。
+
+### Source
+- `docs/adr/ADR-003-3d-globe-stability-ux-optimization.md`
+- `assets/js/custom.js`
+
+### Supersedes
+与滚轮释放实现不一致的旧表述。
+
 ## 流量遥测
 
 ### Rule

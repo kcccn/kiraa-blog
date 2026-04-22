@@ -422,18 +422,19 @@
       });
 
       function bindWheelStopPropagation(chart) {
-        var canvas = chart.getDom().querySelector('canvas');
-        if (!canvas) return;
+        var canvases = chart.getDom().querySelectorAll('canvas');
+        if (!canvases.length) return;
         
         var zr = chart.getZr();
         if (zr && zr.off) {
           zr.off('wheel');
         }
         
-        canvas.addEventListener('wheel', function (e) {
-          e.stopPropagation();
-          e.preventDefault();
-        }, { capture: true, passive: false });
+        canvases.forEach(function (canvas) {
+          canvas.addEventListener('wheel', function (e) {
+            e.stopImmediatePropagation();
+          }, { capture: true, passive: true });
+        });
       }
 
       function preloadTexture(chart, textureUrl) {
