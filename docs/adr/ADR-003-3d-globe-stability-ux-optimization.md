@@ -61,12 +61,12 @@ function bindWheelStopPropagation(chart) {
 采用异步预加载模式：
 
 ```
-echarts.init → showLoading → new Image() 预加载贴图 → onload: hideLoading + setOption → onerror: 降级处理
+echarts.init → 宿主容器进入 loading 态 → new Image() 预加载贴图 → onload: setOption + reveal → onerror: 降级处理 + reveal
 ```
 
-- **Loading 动画**：主题感知颜色（暗色 `#00ff88` / 亮色 `#009955`），`maskColor: 'transparent'`
+- **Loading 呈现**：`Nexus` 页面不再依赖 ECharts `showLoading()` overlay；由宿主容器提供主题感知的静默 loading 背景，禁止出现居中文字提示
 - **贴图预加载**：`new Image()` 异步预加载，`onload` 后调用 `setOption`
-- **容器显现**：地球宿主容器默认保持未就绪态；仅在 `setOption` 完成后的下一帧切换到 ready，通过透明度 + 横向位移的 reveal 过渡显现，避免 WebGL 画面硬切出来
+- **容器显现**：地球宿主容器默认保持未就绪态；仅在 `setOption` 完成后的下一帧切换到 ready，通过背景占位 + canvas 延后淡入的 reveal 过渡显现，避免 WebGL 画面硬切出来
 
 ### 3. 移动端上下文恢复
 
@@ -136,8 +136,9 @@ ctx.fillRect(0, 0, 4, 4);
 - ECharts-GL canvas 的 `wheel` 事件必须通过 zrender API 移除 + 对所有 canvas 在 capture 阶段调用 `stopImmediatePropagation()` 的方式释放给浏览器，禁止调用 `preventDefault()` 阻断页面默认滚动
 - chart dispose 后重建时必须重新绑定 wheel 监听器
 - `buildOption` 的 `baseTexture` 必须由调用方显式传入，禁止在函数内部硬编码远程 URL
-- 3D 地球初始化必须使用 `showLoading` → Image 预加载 → `hideLoading` + `setOption` 的异步模式
+- `Nexus` 地球初始化必须使用“宿主容器 loading 态 → Image 预加载 → `setOption` → reveal”的异步模式，不得重新引入 ECharts 居中 loading 文案
 - `Nexus` 地球容器必须在资源 ready 后再 reveal，不得在 `setOption` 前直接完全显示
+- 暗色模式下不得出现白色方形 loading 爆闪或亮底
 - 贴图加载失败时必须提供主题感知的兜底 Canvas
 - Loading 动画颜色必须通过 `getThemeContext()` 动态获取
 - `buildOption` 的 `baseTexture` 必须传递 URL/Base64 字符串，禁止传递 Image/Canvas 对象

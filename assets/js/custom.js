@@ -429,12 +429,6 @@
         window.fixit.isDark ? 'dark' : 'light',
         { renderer: 'canvas' }
       );
-      nexusChart.showLoading({
-        text: 'ESTABLISHING ORBIT...',
-        color: themeContext.loadingColor,
-        textColor: themeContext.loadingColor,
-        maskColor: 'transparent'
-      });
 
       function bindWheelStopPropagation(chart) {
         var canvases = chart.getDom().querySelectorAll('canvas');
@@ -456,14 +450,12 @@
         var ctx = getThemeContext();
         var img = new Image();
         img.onload = function () {
-          chart.hideLoading();
           chart.setOption(buildOption(textureUrl, window.fixit.isDark, state.coords));
           bindWheelStopPropagation(chart);
           revealNexusGlobe(host);
         };
         img.onerror = function () {
           console.warn('[nexus-globe] Orbit telemetry failed: Texture lost. Engaging fallback module.');
-          chart.hideLoading();
           var fallbackCanvas = document.createElement('canvas');
           fallbackCanvas.width = 4;
           fallbackCanvas.height = 4;
@@ -484,12 +476,6 @@
         themeContext = getThemeContext();
         setNexusGlobeRenderState(host, 'loading');
         nexusChart = window.echarts.init(host, window.fixit.isDark ? 'dark' : 'light', { renderer: 'canvas' });
-        nexusChart.showLoading({
-          text: 'ESTABLISHING ORBIT...',
-          color: themeContext.loadingColor,
-          textColor: themeContext.loadingColor,
-          maskColor: 'transparent'
-        });
         preloadTexture(nexusChart, baseTexture);
       });
       window.fixit.resizeEventSet.add(function () {

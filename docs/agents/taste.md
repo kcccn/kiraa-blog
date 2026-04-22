@@ -133,6 +133,23 @@ globe 生命周期、telemetry 仲裁、图片优化、内容渲染边界。
 ### Supersedes
 只关注资源 ready、忽略容器 reveal 节奏的旧实现。
 
+### Rule
+高成本 WebGL 组件的 loading 态应由宿主容器控制，而不是直接把第三方默认 overlay 暴露给最终 UI。
+
+### Why
+第三方默认 loading 层通常不理解当前主题、页面气质与最终动效节奏，尤其在暗色模式下容易产生白块、方形爆闪和突兀文案。
+
+### Scope
+`Nexus` 地球这类带贴图预加载、fallback 和主题切换重建的 WebGL 视觉组件。
+
+### Source
+- `docs/adr/ADR-003-3d-globe-stability-ux-optimization.md`
+- `assets/js/custom.js`
+- `assets/css/_custom.scss`
+
+### Supersedes
+把第三方默认 loading overlay 直接交给用户看的旧做法。
+
 ## 反模式
 
 - 直接修改 `themes/FixIt/`，而不是通过项目侧覆盖实现
