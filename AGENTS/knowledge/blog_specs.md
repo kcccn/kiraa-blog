@@ -167,6 +167,18 @@ assets/ 本地资源提供 JS / 图片
 
 **覆盖机制**：项目 `static/` 下同名文件自动覆盖 `themes/FixIt/static/`，无需修改模板（S-25）。
 
+### 2.9 封面图优化规范
+
+| 配置项 | 值 | 说明 |
+|--------|-----|------|
+| 图片优化开关 | `[params.image] optimise = true` | 启用 FixIt 内置 WebP 转换 + srcset 生成 |
+| 远程图片缓存 | `cacheRemote = false` | 不缓存远程图片 |
+| 首页封面 srcset | 800w / 1200w / 1600w WebP | `fill 800x336 / 1200x504 / 1600x672 Center` |
+| 文章页封面 srcset | 800w / 1200x / 1600x WebP | `resize 800x / 1200x / 1600x` |
+| 原始图片宽度上限 | 1600px | 超大图应预处理后再提交，减少构建耗时 |
+
+**性能收益**：WebP 格式比 JPEG/PNG 减少约 30-50% 体积；浏览器根据 viewport 自动选择合适尺寸，移动端仅加载 800w 版本。
+
 ---
 
 ## 3. 同名模板覆盖实操规范

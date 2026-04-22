@@ -67,6 +67,10 @@ summaryLength = 200
     enable = true
     since = 2026
 
+  [params.image]
+    cacheRemote = false
+    optimise = true
+
 [markup]
   _merge = "shallow"
   [markup.highlight]
