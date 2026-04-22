@@ -208,9 +208,15 @@
     }
   }
 
-  const CYBER_TEXTURE = 'https://cdn.jsdelivr.net/gh/apache/echarts-website@asf-site/examples/data-gl/asset/bathymetry_bw_composite_4k.jpg';
+  function getThemeContext() {
+    var isDark = window.fixit && window.fixit.isDark;
+    return {
+      loadingColor: isDark ? '#00ff88' : '#009955',
+      fallbackBg: isDark ? '#0a0f14' : '#f5f7fa',
+    };
+  }
 
-  function buildOption(fallbackTexture, isDark, coords) {
+  function buildOption(baseTexture, isDark, coords) {
     var allData = coords || FALLBACK_COORDS;
     var realUsers = [];
     var proxyNodes = [];
@@ -227,7 +233,7 @@
     return {
       backgroundColor: 'transparent',
       globe: {
-        baseTexture: CYBER_TEXTURE,
+        baseTexture: baseTexture,
         environment: '',
         shading: 'color',
         light: {
@@ -332,12 +338,38 @@
 
       disposeChart();
       showGlobe(wrapper);
+      var themeContext = getThemeContext();
       state.chart = window.echarts.init(
         host,
         window.fixit.isDark ? 'dark' : 'light',
         { renderer: 'canvas' }
       );
-      state.chart.setOption(buildOption(baseTexture, window.fixit.isDark, state.coords));
+      state.chart.showLoading({
+        text: 'ESTABLISHING ORBIT...',
+        color: themeContext.loadingColor,
+        textColor: themeContext.loadingColor,
+        maskColor: 'transparent'
+      });
+
+      var earthImg = new Image();
+      earthImg.onload = function () {
+        if (!state.chart) return;
+        state.chart.hideLoading();
+        state.chart.setOption(buildOption(earthImg, window.fixit.isDark, state.coords));
+      };
+      earthImg.onerror = function () {
+        if (!state.chart) return;
+        console.warn('[footer-globe] Orbit telemetry failed: Texture lost. Engaging fallback module.');
+        state.chart.hideLoading();
+        var fallbackCanvas = document.createElement('canvas');
+        fallbackCanvas.width = 4;
+        fallbackCanvas.height = 4;
+        var ctx = fallbackCanvas.getContext('2d');
+        ctx.fillStyle = themeContext.fallbackBg;
+        ctx.fillRect(0, 0, 4, 4);
+        state.chart.setOption(buildOption(fallbackCanvas, window.fixit.isDark, state.coords));
+      };
+      earthImg.src = baseTexture;
     } catch (error) {
       hideGlobe(wrapper, 'Failed to initialize footer globe.', error);
     }
@@ -376,26 +408,62 @@
         var fetched = await fetchVisitCoords();
         state.coords = fetched || FALLBACK_COORDS;
       }
+      var themeContext = getThemeContext();
       var nexusChart = window.echarts.init(
         host,
         window.fixit.isDark ? 'dark' : 'light',
         { renderer: 'canvas' }
       );
-      nexusChart.setOption(buildOption(baseTexture, window.fixit.isDark, state.coords));
+      nexusChart.showLoading({
+        text: 'ESTABLISHING ORBIT...',
+        color: themeContext.loadingColor,
+        textColor: themeContext.loadingColor,
+        maskColor: 'transparent'
+      });
 
-      var nexusCanvas = host.querySelector('canvas') || host;
-      nexusCanvas.addEventListener('wheel', function (e) {
-        e.stopPropagation();
-      }, { passive: true });
+      function bindWheelStopPropagation() {
+        var canvas = host.querySelector('canvas') || host;
+        canvas.addEventListener('wheel', function (e) {
+          e.stopPropagation();
+        }, { passive: true });
+      }
+
+      function preloadTexture(chart, textureUrl) {
+        var ctx = getThemeContext();
+        var img = new Image();
+        img.onload = function () {
+          chart.hideLoading();
+          chart.setOption(buildOption(img, window.fixit.isDark, state.coords));
+          bindWheelStopPropagation();
+        };
+        img.onerror = function () {
+          console.warn('[nexus-globe] Orbit telemetry failed: Texture lost. Engaging fallback module.');
+          chart.hideLoading();
+          var fallbackCanvas = document.createElement('canvas');
+          fallbackCanvas.width = 4;
+          fallbackCanvas.height = 4;
+          var fCtx = fallbackCanvas.getContext('2d');
+          fCtx.fillStyle = ctx.fallbackBg;
+          fCtx.fillRect(0, 0, 4, 4);
+          chart.setOption(buildOption(fallbackCanvas, window.fixit.isDark, state.coords));
+          bindWheelStopPropagation();
+        };
+        img.src = textureUrl;
+      }
+
+      preloadTexture(nexusChart, baseTexture);
 
       window.fixit.switchThemeEventSet.add(function () {
         nexusChart.dispose();
+        themeContext = getThemeContext();
         nexusChart = window.echarts.init(host, window.fixit.isDark ? 'dark' : 'light', { renderer: 'canvas' });
-        nexusChart.setOption(buildOption(baseTexture, window.fixit.isDark, state.coords));
-        var newCanvas = host.querySelector('canvas') || host;
-        newCanvas.addEventListener('wheel', function (e) {
-          e.stopPropagation();
-        }, { passive: true });
+        nexusChart.showLoading({
+          text: 'ESTABLISHING ORBIT...',
+          color: themeContext.loadingColor,
+          textColor: themeContext.loadingColor,
+          maskColor: 'transparent'
+        });
+        preloadTexture(nexusChart, baseTexture);
       });
       window.fixit.resizeEventSet.add(function () {
         nexusChart.resize();

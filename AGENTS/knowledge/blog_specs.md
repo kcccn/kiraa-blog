@@ -138,7 +138,7 @@ assets/ 本地资源提供 JS / 图片
 |--------|-----|------|
 | 渲染组件 | `globe` | `map3D` 不支持叠加 `scatter3D` |
 | 背景透明 | `backgroundColor: 'transparent'` + `environment: ''` | `''` 彻底禁用星空黑框，`'transparent'` 无效 |
-| 贴图 | `bathymetry_bw_composite_4k.jpg`（CDN） | 深色灰度地图，赛博风格 |
+| 贴图 | `assets/images/echarts/world.jpg`（本地 Hugo 管道） | 深色灰度地图，赛博风格；通过 `data-base-texture` 传入，`new Image()` 预加载消除 FOUC |
 | 材质 | `shading: 'color'` | 无光影，纯色暗化，配合发光大气层 |
 | 大气层颜色 | `#42b883`（Vue Green） | ADR-003 合规 |
 | 散点系列 | `scatter3D` + `blendMode: 'lighter'` | 加色混合，越密集越亮 |

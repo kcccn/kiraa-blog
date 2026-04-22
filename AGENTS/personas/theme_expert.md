@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# AGENTS/personas/theme_expert.md
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# AGENTS/personas/theme_expert.md
 <!-- File: AGENTS/personas/theme_expert.md -->
 
 # 角色定义：主题维护专家（Theme Expert）
@@ -97,6 +97,10 @@ Theme Expert 执行任何操作时，**必须严格遵循** `AGENTS/workflows/ma
 | S-46 | `[params.image] optimise` 必须保持 `true`，不得关闭；新增图片资源宽度不应超过 1600px，超大图应预处理后再提交 | 关闭优化会导致封面图加载延迟高；超大图增加构建耗时（踩坑记录 2026-04-22） |
 | S-47 | Pulse Chart 必须使用 SVG renderer（非 Canvas），无 wheel 事件劫持风险；API 失败时必须静默隐藏图表而非报错 | SVG renderer 轻量且无滚动劫持问题（踩坑记录 2026-04-22） |
 
+| S-48 | `buildOption` 的 `baseTexture` 必须由调用方显式传入，禁止在函数内部硬编码远程 URL | 硬编码远程 CDN URL 绕过本地资源固化策略，违反 S-10（踩坑记录 2026-04-22） |
+| S-49 | 3D 地球初始化必须使用 `showLoading` → Image 预加载 → `hideLoading` + `setOption` 的异步模式，禁止同步 `setOption` 导致 FOUC | 同步 `setOption` 时 ECharts-GL 异步加载贴图，期间 canvas 白屏闪烁（踩坑记录 2026-04-22） |
+| S-50 | 贴图加载失败时必须提供主题感知的兜底 Canvas（`getThemeContext().fallbackBg`），不得显示空白地球 | 空白地球比纯色兜底球体视觉体验更差（踩坑记录 2026-04-22） |
+| S-51 | Loading 动画颜色必须通过 `getThemeContext()` 动态获取，与当前主题协调；`maskColor` 必须为 `'transparent'` | 不透明 maskColor 遮挡页面内容；Loading 颜色与主题不协调视觉突兀（踩坑记录 2026-04-22） |
 ## 能力要求
 
 | 技能 | 要求级别 | 说明 |

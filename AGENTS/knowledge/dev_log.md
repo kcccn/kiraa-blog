@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# AGENTS/knowledge/dev_log.md
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# AGENTS/knowledge/dev_log.md
 <!-- File: AGENTS/knowledge/dev_log.md -->
 
 # 长期记忆与决策库
@@ -121,6 +121,14 @@
 - **解决方案**：将 `hugo.toml` 中 `<YOUR_REPO_ID>` 替换为 `R_kgDORC3Ygw`，`<YOUR_CATEGORY_ID>` 替换为 `DIC_kwDORC3Yg84C7PuG`，构建验证通过
 - **对 Agent 的强制约束**：无新增约束
 
+### [2026-04-22] 修复 3D 地球 FOUC 白屏问题并实现主题感知优雅降级
+
+- **事件类型**：Bug 修复 + 功能增强
+- **触发原因**：ECharts-GL 3D 地球在加载高分辨率贴图时出现白屏闪烁（FOUC），贴图加载失败时无兜底机制；`buildOption()` 的 `fallbackTexture` 参数为死代码，函数内部硬编码远程 CDN URL `CYBER_TEXTURE`，绕过了本地资源固化策略（S-10）
+- **踩坑点**：`buildOption(fallbackTexture, isDark, coords)` 的第一个参数从未被使用，第 230 行硬编码 `baseTexture: CYBER_TEXTURE`（jsDelivr CDN 远程 URL），而 Nexus 模板通过 `data-base-texture` 传入的是本地 `assets/images/echarts/world.jpg` 的 Hugo 管道输出 URL——实际运行时远程 CDN 贴图覆盖了本地资源路径，违反 S-10；ECharts-GL 在 `setOption` 时同步启动贴图异步加载，期间 canvas 显示白屏，无 Loading 动画；贴图加载失败时地球完全空白，无降级机制
+- **解决方案**：1）删除 `CYBER_TEXTURE` 远程 URL 常量，将 `buildOption` 签名修正为 `buildOption(baseTexture, isDark, coords)`，使 `baseTexture` 由调用方显式传入（Image 对象 / Canvas 对象 / URL 字符串），贴图来源回归本地 `world.jpg`；2）新增 `getThemeContext()` 函数，基于 `window.fixit.isDark` 返回主题感知的 Loading 颜色（暗色 `#00ff88` / 亮色 `#009955`）和兜底底色（暗色 `#0a0f14` / 亮色 `#f5f7fa`）；3）重构 `initNexusGlobe()` 和 `initFooterGlobe()` 为异步预加载模式：`echarts.init` → `showLoading`（主题感知颜色 + `maskColor: 'transparent'`）→ `new Image()` 预加载贴图 → `onload` 时 `hideLoading` + `setOption`（传入 Image 对象）→ `onerror` 时 `hideLoading` + 创建 4×4 兜底 Canvas（`themeContext.fallbackBg` 填充）+ `setOption`；4）主题切换时 chart 重建后同样走预加载流程（贴图已在浏览器缓存，几乎瞬时完成）；5）提取 `bindWheelStopPropagation()` 和 `preloadTexture()` 辅助函数消除重复代码
+- **对 Agent 的强制约束**：`buildOption` 的 `baseTexture` 必须由调用方显式传入，禁止在函数内部硬编码远程 URL；3D 地球初始化必须使用 `showLoading` → Image 预加载 → `hideLoading` + `setOption` 的异步模式，禁止同步 `setOption` 导致 FOUC；贴图加载失败时必须提供主题感知的兜底 Canvas（`getThemeContext().fallbackBg`），不得显示空白地球；Loading 动画颜色必须通过 `getThemeContext()` 动态获取，与当前主题协调
+
 ### [2026-04-22] 移除双分割线，注入赛博脉搏折线图
 
 - **事件类型**：功能添加 + UI 优化
@@ -128,6 +136,14 @@
 - **踩坑点**：无新增
 - **解决方案**：移除 `<hr class="nexus-divider" />` 及其 CSS；在 `layouts/nexus.html` 中插入 `#pulse-chart` 容器；在 `api/visit.js` 中新增 `?stats=daily` 接口返回近 14 天 UV 趋势（`SMEMBERS geo:days` + Pipeline `SCARD geo:uv:{day}`）；在 `assets/js/custom.js` 中新增 `initPulseChart()` 使用 SVG renderer 绘制极简赛博绿折线图，复用 Nexus 页面已加载的 echarts 核心库零额外体积
 - **对 Agent 的强制约束**：Pulse Chart 必须使用 SVG renderer（非 Canvas），无 wheel 事件劫持风险；API 失败时必须静默隐藏图表而非报错
+
+### [2026-04-22] 赛博脉搏交互升级：tooltip + 幽灵拐点 + 极简刻度
+
+- **事件类型**：功能增强
+- **触发原因**：初版 Pulse Chart 为纯气氛动画，无交互无信息量，需注入数据看板能力
+- **踩坑点**：无新增
+- **解决方案**：新增 `tooltip`（暗黑玻璃态悬浮窗，绿色边框，monospace 字体）；`xAxis` 隐藏轴线/刻度线但保留幽暗日期文字（`color:'#555'`）；`series` 改为 `showSymbol:false` + `symbol:'circle'` + `symbolSize:8` + `itemStyle` 实现 hover 亮起白芯绿边光斑；`grid` 调整为 `containLabel:true` 为底部文字留空间
+- **对 Agent 的强制约束**：无新增约束
 
 ### [2026-04-22] 启用封面图 WebP 自适应优化
 
