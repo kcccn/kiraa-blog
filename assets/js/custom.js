@@ -406,6 +406,60 @@
     });
   }
 
+  function initPulseChart() {
+    var el = document.getElementById('pulse-chart');
+    if (!el || !window.echarts) return;
+
+    fetch('/api/visit?stats=daily')
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        var daily = data.daily || [];
+        if (daily.length === 0) {
+          el.style.display = 'none';
+          return;
+        }
+        var dates = daily.map(function (d) { return d.date.slice(5); });
+        var uvs = daily.map(function (d) { return d.uv; });
+
+        var chart = window.echarts.init(el, null, { renderer: 'svg' });
+        var pulseOption = {
+          backgroundColor: 'transparent',
+          grid: { top: 10, bottom: 20, left: 0, right: 0, containLabel: false },
+          xAxis: { type: 'category', show: false, data: dates },
+          yAxis: { type: 'value', show: false },
+          series: [{
+            data: uvs,
+            type: 'line',
+            smooth: true,
+            symbol: 'none',
+            lineStyle: {
+              color: '#00ff88',
+              width: 2,
+              shadowColor: 'rgba(0, 255, 136, 0.5)',
+              shadowBlur: 10
+            },
+            areaStyle: {
+              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                { offset: 0, color: 'rgba(0, 255, 136, 0.4)' },
+                { offset: 1, color: 'rgba(0, 255, 136, 0.0)' }
+              ])
+            }
+          }]
+        };
+        chart.setOption(pulseOption);
+
+        window.fixit.resizeEventSet.add(function () { chart.resize(); });
+        window.fixit.switchThemeEventSet.add(function () {
+          chart.dispose();
+          chart = window.echarts.init(el, null, { renderer: 'svg' });
+          chart.setOption(pulseOption);
+        });
+      })
+      .catch(function () {
+        el.style.display = 'none';
+      });
+  }
+
   function boot() {
     if (getConfig() || getHost()) {
       bindFixItEvents();
@@ -413,6 +467,7 @@
     }
     if (document.querySelector(NEXUS_GLOBE_SELECTOR)) {
       initNexusGlobe();
+      initPulseChart();
     }
   }
 

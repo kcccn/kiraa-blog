@@ -321,6 +321,7 @@ featuredImage: "img/cover.jpg" # 可选，封面图相对路径
 |------|------|------|
 | Header | 模板 `layouts/nexus.html` | 渲染 title + subtitle |
 | 3D 地球 | `#nexus-globe` 容器 + `custom.js` `initNexusGlobe()` | 页面内专属地球，独立于 footer 全局地球 |
+| 赛博脉搏 | `#pulse-chart` 容器 + `custom.js` `initPulseChart()` | 近 14 天 UV 趋势折线图，SVG renderer |
 | 友链 | `.Site.Data.friends` → CSS Grid 赛博卡片 | 数据源 `data/friends.yml` |
 | 留言板 | FixIt 原生 `single/comment.html`（Giscus） | `comment: true` 触发 |
 | Markdown 正文 | `.Content` | 支持友链申请格式说明等 |

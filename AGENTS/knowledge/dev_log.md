@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# AGENTS/knowledge/dev_log.md
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# AGENTS/knowledge/dev_log.md
 <!-- File: AGENTS/knowledge/dev_log.md -->
 
 # 长期记忆与决策库
@@ -120,6 +120,22 @@
 - **踩坑点**：无
 - **解决方案**：将 `hugo.toml` 中 `<YOUR_REPO_ID>` 替换为 `R_kgDORC3Ygw`，`<YOUR_CATEGORY_ID>` 替换为 `DIC_kwDORC3Yg84C7PuG`，构建验证通过
 - **对 Agent 的强制约束**：无新增约束
+
+### [2026-04-22] 移除双分割线，注入赛博脉搏折线图
+
+- **事件类型**：功能添加 + UI 优化
+- **触发原因**：Nexus 页面地球与友链之间存在双分割线（`<hr class="nexus-divider">` + `.nexus-section-title` 的 `border-bottom`），视觉冗余；需替换为流量趋势折线图
+- **踩坑点**：无新增
+- **解决方案**：移除 `<hr class="nexus-divider" />` 及其 CSS；在 `layouts/nexus.html` 中插入 `#pulse-chart` 容器；在 `api/visit.js` 中新增 `?stats=daily` 接口返回近 14 天 UV 趋势（`SMEMBERS geo:days` + Pipeline `SCARD geo:uv:{day}`）；在 `assets/js/custom.js` 中新增 `initPulseChart()` 使用 SVG renderer 绘制极简赛博绿折线图，复用 Nexus 页面已加载的 echarts 核心库零额外体积
+- **对 Agent 的强制约束**：Pulse Chart 必须使用 SVG renderer（非 Canvas），无 wheel 事件劫持风险；API 失败时必须静默隐藏图表而非报错
+
+### [2026-04-22] 启用封面图 WebP 自适应优化
+
+- **事件类型**：性能优化
+- **触发原因**：封面图原始分辨率过高（最大 3578px），加载延迟大；FixIt 内置 `OptimConfig` 已定义 srcset 但 `optimise` 默认关闭
+- **踩坑点**：`hugo.toml` 被编辑器写入 UTF-8 BOM 导致 Hugo 解析失败（S-07 再次触发）；`llm-structure.png` 宽度 3578px 远超封面展示需求（最大 1600px），增加构建耗时
+- **解决方案**：在 `hugo.toml` 中添加 `[params.image] cacheRemote = false, optimise = true` 启用 FixIt 内置图片优化；预处理 `llm-structure.png` 从 3578×633 缩小到 1600×283；移除 `hugo.toml` 的 UTF-8 BOM
+- **对 Agent 的强制约束**：`[params.image] optimise` 必须保持 `true`，不得关闭；新增图片资源宽度不应超过 1600px，超大图应预处理后再提交
 
 ### [2026-04-21] 修复 3D 地球滚动劫持问题
 

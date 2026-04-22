@@ -1,4 +1,4 @@
-const { Redis } = require('@upstash/redis');
+﻿const { Redis } = require('@upstash/redis');
 const crypto = require('crypto');
 
 const ARBITRATION_DISTANCE_KM = 100;
@@ -356,6 +356,33 @@ module.exports = async function handler(req, res) {
 
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Cache-Control', 'no-store');
+
+  if (req.query.stats === 'daily') {
+    const redis = getRedis();
+    if (!redis) {
+      return res.status(503).json({ error: 'Redis not configured', daily: [] });
+    }
+    try {
+      const days = await redis.smembers(GEO_DAYS_KEY);
+      days.sort();
+      const last14 = days.slice(-14);
+      if (last14.length === 0) {
+        return res.status(200).json({ daily: [] });
+      }
+      const pipeline = redis.pipeline();
+      for (const day of last14) {
+        pipeline.scard(`geo:uv:${day}`);
+      }
+      const results = await pipeline.exec();
+      const daily = last14.map(function (day, i) {
+        return { date: day, uv: results[i] || 0 };
+      });
+      return res.status(200).json({ daily });
+    } catch (err) {
+      console.error('[visit] Stats error:', err.message);
+      return res.status(500).json({ error: 'Internal server error', daily: [] });
+    }
+  }
 
   const redis = getRedis();
   if (!redis) {

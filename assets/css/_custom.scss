@@ -81,13 +81,14 @@
         }
     }
 
-    .nexus-divider {
-        border: none;
-        border-top: 1px solid rgba(66, 184, 131, 0.2);
+    .nexus-pulse-section {
+        width: 100%;
         margin: 0 0 2rem;
 
-        [data-theme='dark'] & {
-            border-top-color: rgba(66, 184, 131, 0.15);
+        #pulse-chart {
+            width: 100%;
+            height: 180px;
+            margin: 1rem 0 0;
         }
     }
 
