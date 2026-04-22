@@ -4,7 +4,7 @@ date:  2026-02-02
 draft: false
 tags:   [infra, vllm]
 math:  true
-featuredImage: "img/cover.jpg"
+featuredImage: "img/llm-structure.png"
 ---
 
 # 什么是 vLLM

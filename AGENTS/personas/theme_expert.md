@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# AGENTS/personas/theme_expert.md
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# AGENTS/personas/theme_expert.md
 <!-- File: AGENTS/personas/theme_expert.md -->
 
 # 角色定义：主题维护专家（Theme Expert）
@@ -93,6 +93,7 @@ Theme Expert 执行任何操作时，**必须严格遵循** `AGENTS/workflows/ma
 | S-42 | 文章内容目录必须为 `content/posts/`（复数），与 FixIt 模板 `layouts/posts/single.html` 对齐，禁止恢复为 `content/post/` | 目录名与模板名自动匹配，无需每篇加 `type: posts`（踩坑记录 2026-04-21） |
 | S-43 | 文章级 CC 协议通过 `[params.page].license` 配置注入，不得在页脚 `[params.footer]` 中添加 license HTML | 数据与视图解耦：CC 协议仅出现在文章页底部，页脚保持纯洁（踩坑记录 2026-04-21） |
 | S-44 | `[permalinks]` 必须使用 `:contentbasename` 而非已弃用的 `:filename` | `:filename` 在 Hugo 0.144.0 中已弃用（踩坑记录 2026-04-21） |
+| S-45 | ECharts-GL canvas 的 `wheel` 事件必须通过 `stopPropagation()` 释放给浏览器，不得仅依赖 `zoomSensitivity: 0`；chart dispose 后重建时必须重新绑定 wheel 监听器 | `zoomSensitivity: 0` 仅禁止缩放逻辑，canvas 仍消费 wheel 事件导致滚动劫持（踩坑记录 2026-04-21） |
 
 ## 能力要求
 
