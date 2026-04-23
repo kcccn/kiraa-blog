@@ -150,6 +150,52 @@ globe 生命周期、telemetry 仲裁、图片优化、内容渲染边界。
 ### Supersedes
 把第三方默认 loading overlay 直接交给用户看的旧做法。
 
+### Rule
+无缝循环滚动使用首尾克隆法，两排同步滚动需要独立状态管理。
+
+### Why
+两排卡片数量不同时，scrollWidth 不同，共享同一个 position 会导致边界检测不同步；独立状态管理确保每排都能正确处理边界，同时保持同步滚动。
+
+### Scope
+服务卡片橱窗、友链滚动、任何需要多排同步滚动的组件。
+
+### Source
+- `assets/js/custom.js` - `initServiceCarousel()`
+- `layouts/nexus.html`
+
+### Supersedes
+单排滚动或共享状态的旧实现。
+
+### Rule
+拖拽交互使用 Pointer Events 统一处理鼠标和触摸，避免分别绑定 mouse 和 touch 事件。
+
+### Why
+Pointer Events API 提供统一的接口，自动处理鼠标、触摸和笔输入，减少代码复杂度和事件冲突。
+
+### Scope
+可拖拽容器、滚动区域、任何需要同时支持鼠标和触摸的交互组件。
+
+### Source
+- `assets/js/custom.js` - `initServiceCarousel()`
+
+### Supersedes
+分别绑定 mousedown/mousemove/mouseup 和 touchstart/touchmove/touchend 的旧做法。
+
+### Rule
+滚动动画中避免频繁位置规范化，只在显示时计算规范化位置，保持实际位置累积。
+
+### Why
+频繁修改实际位置会导致跳变和卡顿；分离显示位置和实际位置，延迟边界检测，可以确保平滑过渡。
+
+### Scope
+无缝循环滚动、拖拽交互、任何需要边界检测的动画。
+
+### Source
+- `assets/js/custom.js` - `normalizePosition()`, `updateAllCarousels()`
+
+### Supersedes
+每次更新都规范化位置的旧实现。
+
 ## 反模式
 
 - 直接修改 `themes/FixIt/`，而不是通过项目侧覆盖实现
