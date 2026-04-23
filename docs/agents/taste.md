@@ -167,6 +167,68 @@ globe 生命周期、telemetry 仲裁、图片优化、内容渲染边界。
 单排滚动或共享状态的旧实现。
 
 ### Rule
+热力图使用构建时数据聚合，前端仅负责渲染。
+
+### Why
+将算力消耗前置到 Hugo 构建期，前端无需 API 请求即可瞬间渲染；数据在静态网站打包时完成聚合，保证零运行时依赖。
+
+### Scope
+归档页面热力图、任何需要日期聚合的可视化组件。
+
+### Source
+- `layouts/home.archives.html`
+- `assets/js/custom.js` - `initArchiveHeatmap()`
+
+### Supersedes
+运行时 fetch 数据再聚合的方案。
+
+### Rule
+热力图网格使用粗边框模拟间距，而非依赖 ECharts 原生 splitLine。
+
+### Why
+ECharts calendar 的 splitLine 在主题切换时容易产生视觉不一致；用 `borderWidth: 3` + `borderColor: gapColor` 的方式，让边框颜色与页面背景严格一致，实现 GitHub 风格的像素级网格间距效果。
+
+### Scope
+日历热力图、任何需要网格间距的 ECharts calendar 组件。
+
+### Source
+- `assets/js/custom.js` - `initArchiveHeatmap()`
+
+### Supersedes
+依赖 ECharts 原生 splitLine 的实现。
+
+### Rule
+热力图配色必须同时支持亮色与暗色主题，使用 `window.fixit.isDark` 检测当前主题。
+
+### Why
+单主题配色在主题切换后会显得突兀或不可读；通过 `getThemeColors()` 函数返回主题感知的配色对象，确保热力图在任何主题下都有正确的对比度和视觉一致性。
+
+### Scope
+ECharts 图表、任何需要主题自适应的可视化组件。
+
+### Source
+- `assets/js/custom.js` - `initArchiveHeatmap()`, `getThemeColors()`
+
+### Supersedes
+硬编码单主题配色的实现。
+
+### Rule
+年份切换器使用动态生成按钮，当前年份高亮显示。
+
+### Why
+多年份数据需要直观的切换入口；动态生成确保按钮数量与实际年份数据一致，高亮状态提供清晰的当前选择反馈。
+
+### Scope
+热力图年份切换、任何需要多维度切换的组件。
+
+### Source
+- `assets/js/custom.js` - `renderSwitcher()`
+- `layouts/home.archives.html`
+
+### Supersedes
+手动硬编码年份按钮的做法。
+
+### Rule
 拖拽交互使用 Pointer Events 统一处理鼠标和触摸，避免分别绑定 mouse 和 touch 事件。
 
 ### Why

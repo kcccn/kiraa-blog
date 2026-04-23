@@ -821,6 +821,131 @@
     autoScroll();
   }
 
+  function initArchiveHeatmap() {
+    var el = document.getElementById('posts-calendar');
+    var switcherEl = document.getElementById('year-switcher');
+    if (!el) return;
+
+    var heatmapDataByYear = window.__archiveHeatmapDataByYear;
+    var yearsArray = window.__archiveHeatmapYears;
+    if (!heatmapDataByYear || !yearsArray || yearsArray.length === 0) {
+      el.style.display = 'none';
+      if (switcherEl) switcherEl.style.display = 'none';
+      return;
+    }
+
+    if (!window.echarts) {
+      setTimeout(initArchiveHeatmap, 100);
+      return;
+    }
+
+    var chart = window.echarts.init(el, null, { renderer: 'canvas' });
+    var currentSelectedYear = yearsArray[0];
+
+    function getThemeColors() {
+      var isDark = window.fixit && window.fixit.isDark;
+      return {
+        gapColor: isDark ? '#292a2e' : '#ffffff',
+        emptyCell: isDark ? '#161b22' : '#ebedf0',
+        text: isDark ? '#8b949e' : '#57606a',
+        tooltipBg: isDark ? 'rgba(10, 15, 20, 0.85)' : 'rgba(255, 255, 255, 0.95)',
+        tooltipText: isDark ? '#e0e0e0' : '#24292f',
+        visualMap: isDark
+          ? ['#0e4429', '#006d32', '#26a641', '#39d353']
+          : ['#9be9a8', '#40c463', '#30a14e', '#216e39']
+      };
+    }
+
+    function renderChart(year) {
+      var colors = getThemeColors();
+      var option = {
+        backgroundColor: 'transparent',
+        tooltip: {
+          trigger: 'item',
+          backgroundColor: colors.tooltipBg,
+          borderColor: 'rgba(0, 255, 136, 0.5)',
+          borderWidth: 1,
+          textStyle: { color: colors.tooltipText, fontSize: 12 },
+          padding: [8, 12],
+          formatter: function (p) {
+            var words = p.data[1] || 0;
+            var displayWords = words > 1000 ? (words / 1000).toFixed(1) + 'K' : words;
+            return '<div style="font-family: monospace;">' +
+              '<span style="color:#888">' + p.data[0] + '</span><br/>' +
+              'Words Poured: <strong style="color:#00ff88; font-size:14px;">' + displayWords + '</strong>' +
+              '</div>';
+          }
+        },
+        visualMap: {
+          show: false,
+          min: 0,
+          max: 5000,
+          inRange: { color: colors.visualMap }
+        },
+        calendar: {
+          range: year,
+          cellSize: [14, 14],
+          splitLine: { show: false },
+          itemStyle: {
+            color: colors.emptyCell,
+            borderWidth: 3,
+            borderColor: colors.gapColor,
+            borderRadius: 3
+          },
+          yearLabel: { show: false },
+          dayLabel: {
+            nameMap: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+            color: colors.text,
+            fontSize: 10
+          },
+          monthLabel: { color: colors.text, fontSize: 10 }
+        },
+        series: {
+          type: 'heatmap',
+          coordinateSystem: 'calendar',
+          data: heatmapDataByYear[year] || [],
+          emphasis: { itemStyle: { borderColor: '#00ff88', borderWidth: 1 } }
+        }
+      };
+      chart.setOption(option, true);
+    }
+
+    function renderSwitcher() {
+      if (!switcherEl) return;
+      switcherEl.innerHTML = '';
+      yearsArray.forEach(function (year) {
+        var btn = document.createElement('span');
+        btn.innerText = year;
+        var isActive = year === currentSelectedYear;
+        btn.style.cssText = 'cursor: pointer; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-family: monospace; transition: all 0.2s; background: ' +
+          (isActive ? '#00ff88' : 'transparent') +
+          '; color: ' +
+          (isActive ? '#000' : '#888') +
+          ';';
+        btn.addEventListener('click', function () {
+          currentSelectedYear = year;
+          renderSwitcher();
+          renderChart(currentSelectedYear);
+        });
+        switcherEl.appendChild(btn);
+      });
+    }
+
+    renderSwitcher();
+    renderChart(currentSelectedYear);
+
+    if (window.fixit) {
+      window.fixit.resizeEventSet.add(function () {
+        chart.resize();
+      });
+      window.fixit.switchThemeEventSet.add(function () {
+        chart.dispose();
+        chart = window.echarts.init(el, null, { renderer: 'canvas' });
+        renderChart(currentSelectedYear);
+      });
+    }
+  }
+
   function boot() {
     if (getConfig() || getHost()) {
       bindFixItEvents();
@@ -832,6 +957,7 @@
     }
     shuffleFriendLinks();
     initServiceCarousel();
+    initArchiveHeatmap();
   }
 
   if (document.readyState !== 'loading') {

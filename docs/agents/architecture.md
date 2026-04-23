@@ -115,6 +115,55 @@ Nexus 页面结构与地球挂载容器。
 ### Supersedes
 与滚轮释放实现不一致的旧表述。
 
+## 归档页面
+
+### Rule
+归档页面热力图必须保持页面级隔离，ECharts 仅在归档页面加载。
+
+### Why
+热力图是归档页面专属功能，其他页面不应承担 ECharts 的体积与运行时成本；页面级隔离保证站点整体性能。
+
+### Scope
+`layouts/home.archives.html`、`assets/js/custom.js` - `initArchiveHeatmap()`。
+
+### Source
+- `layouts/home.archives.html`
+- `assets/js/custom.js`
+
+### Supersedes
+无（新增规则）。
+
+### Rule
+归档页面必须手动加载 ECharts，因为 FixIt 主题默认在归档页面排除 ECharts 加载。
+
+### Why
+主题的 `assets.html` 中有 `$isArchivesOrOffline` 判断，会跳过 `hasEcharts` 标记；归档页面需要通过 `partial "store/script.html"` 手动注入 ECharts 脚本。
+
+### Scope
+归档页面模板、任何需要在归档页面使用 ECharts 的场景。
+
+### Source
+- `themes/FixIt/layouts/_partials/assets.html`
+- `layouts/home.archives.html`
+
+### Supersedes
+无（新增规则）。
+
+### Rule
+热力图数据聚合仅统计 `posts` 目录下的非草稿页面，保证数据纯度。
+
+### Why
+热力图展示的是"内容创作者"的产出，而非"代码维护者"的 commit；通过 `where .Site.RegularPages "Section" "posts"` 和 `if not .Draft` 精准过滤，排除工程代码和草稿。
+
+### Scope
+归档页面热力图数据聚合、任何需要统计博客产出的场景。
+
+### Source
+- `layouts/home.archives.html`
+
+### Supersedes
+无（新增规则）。
+
 ## 流量遥测
 
 ### Rule
