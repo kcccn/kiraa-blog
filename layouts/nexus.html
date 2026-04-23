@@ -50,22 +50,48 @@
     {{- /* Services Section */ -}}
     <section class="nexus-services-section">
       <h2 class="nexus-section-title">Open Source Services</h2>
-      <div class="nexus-service-links">
-        {{ range shuffle .Site.Data.services }}
-          <a class="nexus-service-card" title="{{ .description }}"
-             href="{{ .url | safeURL }}" rel="external noopener" target="_blank">
-            {{- if .logo -}}
-              {{- $logo := resources.Get .logo -}}
-              {{- if $logo -}}
-                <img class="nexus-service-logo{{ with .invertDark }} nexus-logo-invert-dark{{ end }}" src="{{ $logo.RelPermalink }}" alt="{{ .name }}" loading="lazy" />
-              {{- end -}}
-            {{- end -}}
-            <span class="nexus-service-name">{{ .name }}</span>
-            {{- with .description -}}
-              <span class="nexus-service-desc">{{ . }}</span>
-            {{- end -}}
-          </a>
-        {{ end }}
+      <div class="nexus-service-carousel-container">
+        {{- $services := .Site.Data.services -}}
+        {{- $total := len $services -}}
+        {{- $half := div $total 2 -}}
+        <div class="nexus-service-carousel-wrapper">
+          <div class="nexus-service-carousel" data-service-carousel="row1" aria-label="服务卡片滚动区域第一排，可拖拽查看">
+            {{ range first $half $services }}
+              <a class="nexus-service-card" title="{{ .description }}"
+                 href="{{ .url | safeURL }}" rel="external noopener" target="_blank" draggable="false">
+                {{- if .logo -}}
+                  {{- $logo := resources.Get .logo -}}
+                  {{- if $logo -}}
+                    <img class="nexus-service-logo{{ with .invertDark }} nexus-logo-invert-dark{{ end }}" src="{{ $logo.RelPermalink }}" alt="{{ .name }}" loading="lazy" draggable="false" />
+                  {{- end -}}
+                {{- end -}}
+                <span class="nexus-service-name">{{ .name }}</span>
+                {{- with .description -}}
+                  <span class="nexus-service-desc">{{ . }}</span>
+                {{- end -}}
+              </a>
+            {{ end }}
+          </div>
+        </div>
+        <div class="nexus-service-carousel-wrapper">
+          <div class="nexus-service-carousel" data-service-carousel="row2" aria-label="服务卡片滚动区域第二排，可拖拽查看">
+            {{ range after $half $services }}
+              <a class="nexus-service-card" title="{{ .description }}"
+                 href="{{ .url | safeURL }}" rel="external noopener" target="_blank" draggable="false">
+                {{- if .logo -}}
+                  {{- $logo := resources.Get .logo -}}
+                  {{- if $logo -}}
+                    <img class="nexus-service-logo{{ with .invertDark }} nexus-logo-invert-dark{{ end }}" src="{{ $logo.RelPermalink }}" alt="{{ .name }}" loading="lazy" draggable="false" />
+                  {{- end -}}
+                {{- end -}}
+                <span class="nexus-service-name">{{ .name }}</span>
+                {{- with .description -}}
+                  <span class="nexus-service-desc">{{ . }}</span>
+                {{- end -}}
+              </a>
+            {{ end }}
+          </div>
+        </div>
       </div>
     </section>
 

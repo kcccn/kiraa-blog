@@ -221,13 +221,37 @@
         margin: 2rem 0;
     }
 
-    .nexus-service-links {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    .nexus-service-carousel-container {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
         gap: 16px;
     }
 
+    .nexus-service-carousel-wrapper {
+        width: 100%;
+        overflow: hidden;
+        position: relative;
+        padding: 8px 0 16px 0;
+        margin: 0;
+    }
+
+    .nexus-service-carousel {
+        display: flex;
+        gap: 16px;
+        cursor: grab;
+        user-select: none;
+        will-change: transform;
+        touch-action: pan-y;
+
+        &:active {
+            cursor: grabbing;
+        }
+    }
+
     .nexus-service-card {
+        flex-shrink: 0;
+        width: 160px;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -246,8 +270,8 @@
 
         &:hover {
             border-color: rgba(66, 184, 131, 0.5);
-            transform: translateY(-5px);
-            box-shadow: 0 5px 15px rgba(66, 184, 131, 0.1);
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(66, 184, 131, 0.15);
         }
     }
 
